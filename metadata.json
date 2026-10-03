@@ -1,0 +1,6 @@
+{
+  "name": "France Economic Flow Explorer",
+  "description": "Explore France's economic, trade and energy flows: imports, exports, partner countries, port infrastructures, and verified supply data.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

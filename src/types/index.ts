@@ -162,3 +162,55 @@ export interface TimeseriesPoint {
   valueEur: number;
   implicitPriceEurPerTonne: number;
 }
+
+export interface IngestedFileMetadata {
+  fileName: string;
+  filePath: string;
+  fileSizeBytes: number;
+  sha256Hash: string;
+  recordCount: number;
+  ingestedAt: string;
+  sourceProvider: string;
+}
+
+export interface QualityCheckResult {
+  checkId: string;
+  name: string;
+  description: string;
+  status: 'PASSED' | 'WARNING' | 'FAILED';
+  recordsTested: number;
+  passedCount: number;
+  failedCount: number;
+  details?: string;
+}
+
+export interface IngestionAuditReport {
+  jobId: string;
+  executedAt: string;
+  durationMs: number;
+  totalRecordsLoaded: number;
+  annualRecordsLoaded: number;
+  monthlyRecordsLoaded: number;
+  filesIngested: IngestedFileMetadata[];
+  checks: QualityCheckResult[];
+  overallStatus: 'PASSED' | 'WARNING' | 'FAILED';
+}
+
+export interface RawCustomsSample {
+  filePath: string;
+  header: string;
+  totalRows: number;
+  rowsReturned: number;
+  records: {
+    rowId: number;
+    year: string;
+    flow: string;
+    reporter: string;
+    partner: string;
+    nc8: string;
+    valueEur: string;
+    netMassKg: string;
+    source: string;
+  }[];
+}
+

@@ -11,6 +11,9 @@ import {
   AnomalyDetection,
   SankeyData,
   TimeseriesPoint,
+  IngestionAuditReport,
+  IngestedFileMetadata,
+  RawCustomsSample,
 } from '../types/index.ts';
 
 const CACHE_PREFIX = 'fefe_cache_';
@@ -147,4 +150,17 @@ export const api = {
   async getSources(): Promise<{ sources: Source[]; datasets: Dataset[] }> {
     return fetchWithCache('/api/sources', 'sources_list');
   },
+
+  async getIngestionReport(): Promise<{ data: IngestionAuditReport }> {
+    return fetchWithCache('/api/ingestion/report', 'ingestion_report');
+  },
+
+  async getIngestionFiles(): Promise<{ data: IngestedFileMetadata[] }> {
+    return fetchWithCache('/api/ingestion/files', 'ingestion_files');
+  },
+
+  async getRawCustomsSample(limit: number = 25): Promise<RawCustomsSample> {
+    return fetchWithCache(`/api/ingestion/raw-sample?limit=${limit}`, `raw_sample_${limit}`);
+  },
 };
+

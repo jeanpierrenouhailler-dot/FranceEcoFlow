@@ -15,6 +15,7 @@ import {
   SankeyData,
   TimeseriesPoint,
 } from '../../src/types/index.ts';
+import { getIngestedFlows, getAuditReport, getIngestedFiles } from './ingestion/index.ts';
 
 // ============================================================
 // 1. SOURCES & DATASETS (Lineage & Provenance)
@@ -677,234 +678,22 @@ export const transportRoutes: TransportRoute[] = [
 ];
 
 // ============================================================
-// 6. ECONOMIC FLOWS DATASET (2015-2026 French Crude Oil Imports)
-// High precision DGDDI / Eurostat official figures
+// 6. ECONOMIC FLOWS DATASET (Ingested from raw official DGDDI customs CSVs)
+// Fully ingested, normalized and validated by the ETL pipeline
+// Direct net mass (kg -> tonnes) and declared CIF value (EUR).
+// Implicit unit price = declared CIF value / declared net mass.
+// No Brent multiplier, no currency conversion, no simulated trigonometric formulas.
 // ============================================================
+export const economicFlows: EconomicFlow[] = getIngestedFlows();
 
-// Base supplier templates with market shares and price characteristics
-interface YearPattern {
-  year: number;
-  totalQuantityMt: number; // in Million Tonnes
-  brentAvgUsd: number;
-  eurUsdRate: number;
-  shares: { [countryId: string]: number }; // fraction of total
+export function getIngestionReport() {
+  return getAuditReport();
 }
 
-const historicalYearPatterns: YearPattern[] = [
-  {
-    year: 2015,
-    totalQuantityMt: 48.25,
-    brentAvgUsd: 52.39,
-    eurUsdRate: 1.11,
-    shares: {
-      KZ: 0.145, SA: 0.175, RU: 0.155, NG: 0.110, NO: 0.095, DZ: 0.065, IQ: 0.055, AZ: 0.045, AO: 0.040, US: 0.015, LY: 0.035, GB: 0.035, BR: 0.015, AE: 0.015,
-    },
-  },
-  {
-    year: 2016,
-    totalQuantityMt: 52.10,
-    brentAvgUsd: 43.73,
-    eurUsdRate: 1.107,
-    shares: {
-      SA: 0.180, KZ: 0.150, RU: 0.145, NG: 0.105, NO: 0.098, IQ: 0.065, DZ: 0.060, AZ: 0.042, AO: 0.038, US: 0.022, LY: 0.032, GB: 0.033, BR: 0.015, AE: 0.015,
-    },
-  },
-  {
-    year: 2017,
-    totalQuantityMt: 54.80,
-    brentAvgUsd: 54.19,
-    eurUsdRate: 1.13,
-    shares: {
-      SA: 0.170, KZ: 0.158, RU: 0.142, NG: 0.112, NO: 0.092, IQ: 0.070, DZ: 0.058, AZ: 0.040, AO: 0.035, US: 0.035, LY: 0.030, GB: 0.030, BR: 0.018, AE: 0.010,
-    },
-  },
-  {
-    year: 2018,
-    totalQuantityMt: 52.60,
-    brentAvgUsd: 71.31,
-    eurUsdRate: 1.18,
-    shares: {
-      SA: 0.165, KZ: 0.162, RU: 0.138, NG: 0.115, NO: 0.088, US: 0.062, IQ: 0.068, DZ: 0.052, AZ: 0.038, AO: 0.032, LY: 0.030, GB: 0.025, BR: 0.015, AE: 0.010,
-    },
-  },
-  {
-    year: 2019,
-    totalQuantityMt: 50.20,
-    brentAvgUsd: 64.21,
-    eurUsdRate: 1.12,
-    shares: {
-      KZ: 0.168, SA: 0.152, RU: 0.135, NG: 0.118, US: 0.095, NO: 0.085, IQ: 0.065, DZ: 0.050, AZ: 0.035, AO: 0.030, LY: 0.027, GB: 0.020, BR: 0.012, AE: 0.008,
-    },
-  },
-  {
-    year: 2020, // Covid-19 disruption
-    totalQuantityMt: 33.85,
-    brentAvgUsd: 41.84,
-    eurUsdRate: 1.14,
-    shares: {
-      KZ: 0.172, SA: 0.155, RU: 0.128, NG: 0.110, US: 0.108, NO: 0.092, IQ: 0.062, DZ: 0.050, AZ: 0.032, AO: 0.028, LY: 0.025, GB: 0.018, BR: 0.012, AE: 0.008,
-    },
-  },
-  {
-    year: 2021, // Economic recovery
-    totalQuantityMt: 36.90,
-    brentAvgUsd: 70.91,
-    eurUsdRate: 1.18,
-    shares: {
-      KZ: 0.170, SA: 0.148, RU: 0.125, US: 0.132, NG: 0.105, NO: 0.098, IQ: 0.060, DZ: 0.048, AZ: 0.032, AO: 0.025, LY: 0.025, GB: 0.015, BR: 0.012, AE: 0.005,
-    },
-  },
-  {
-    year: 2022, // War in Ukraine, energy price spike, phase-out of Russian oil
-    totalQuantityMt: 44.60,
-    brentAvgUsd: 98.98,
-    eurUsdRate: 1.05,
-    shares: {
-      KZ: 0.165, US: 0.185, SA: 0.145, NO: 0.115, NG: 0.102, IQ: 0.075, RU: 0.055, DZ: 0.045, AZ: 0.035, LY: 0.032, AO: 0.020, BR: 0.015, GB: 0.008, AE: 0.003,
-    },
-  },
-  {
-    year: 2023, // EU embargo on Russian crude in full effect (RU -> ~0), US surges to #1
-    totalQuantityMt: 40.80,
-    brentAvgUsd: 82.17,
-    eurUsdRate: 1.08,
-    shares: {
-      US: 0.225, KZ: 0.175, SA: 0.138, NO: 0.128, NG: 0.098, IQ: 0.075, DZ: 0.052, LY: 0.040, AZ: 0.032, AO: 0.018, BR: 0.012, RU: 0.002, GB: 0.003, AE: 0.002,
-    },
-  },
-  {
-    year: 2024, // Stabilized diversification
-    totalQuantityMt: 39.40,
-    brentAvgUsd: 80.50,
-    eurUsdRate: 1.09,
-    shares: {
-      US: 0.235, KZ: 0.178, NO: 0.132, SA: 0.130, NG: 0.095, IQ: 0.072, DZ: 0.050, LY: 0.042, AZ: 0.032, AO: 0.016, BR: 0.012, RU: 0.001, GB: 0.003, AE: 0.002,
-    },
-  },
-  {
-    year: 2025,
-    totalQuantityMt: 38.70,
-    brentAvgUsd: 76.20,
-    eurUsdRate: 1.10,
-    shares: {
-      US: 0.242, KZ: 0.176, NO: 0.135, SA: 0.125, NG: 0.092, IQ: 0.070, DZ: 0.051, LY: 0.044, AZ: 0.031, AO: 0.015, BR: 0.013, RU: 0.000, GB: 0.004, AE: 0.002,
-    },
-  },
-  {
-    year: 2026, // Benchmark current year
-    totalQuantityMt: 38.20,
-    brentAvgUsd: 74.80,
-    eurUsdRate: 1.10,
-    shares: {
-      US: 0.248, KZ: 0.175, NO: 0.138, SA: 0.122, NG: 0.090, IQ: 0.068, DZ: 0.052, LY: 0.045, AZ: 0.030, AO: 0.014, BR: 0.013, RU: 0.000, GB: 0.003, AE: 0.002,
-    },
-  },
-];
+export function getRawSourceFiles() {
+  return getIngestedFiles();
+}
 
-// Helper: 1 barrel ≈ 0.1364 metric tonnes (approx 7.33 barrels per tonne of crude oil)
-// Price per tonne in EUR = (Brent USD / 0.1364) / eurUsdRate * blendPremiumFactor
-const BLEND_PREMIUM_FACTORS: { [key: string]: number } = {
-  US: 1.02, // WTI Midland premium
-  NO: 1.01, // Johan Sverdrup / Ekofisk
-  NG: 1.03, // Bonny Light sweet premium
-  DZ: 1.04, // Saharan Blend ultra light
-  KZ: 0.98, // CPC Blend slight discount
-  SA: 0.97, // Arab Light
-  IQ: 0.95, // Basrah Medium heavier discount
-  LY: 1.01, // Es Sider light sweet
-  AZ: 1.02, // Azeri Light
-  RU: 0.88, // Urals historical discount
-  AO: 0.96, // Girassol
-  BR: 0.98, // Lula/Buzios
-  GB: 1.01, // Brent
-  AE: 1.00,
-};
-
-// Generate economic flows
-export const economicFlows: EconomicFlow[] = [];
-
-historicalYearPatterns.forEach((yp) => {
-  const basePricePerTonneEur = (yp.brentAvgUsd / 0.1364) / yp.eurUsdRate;
-
-  // Annual flows
-  Object.entries(yp.shares).forEach(([partnerId, share]) => {
-    const qtyTonnes = Math.round(yp.totalQuantityMt * 1000000 * share);
-    const premium = BLEND_PREMIUM_FACTORS[partnerId] || 1.0;
-    const implicitPrice = Math.round(basePricePerTonneEur * premium * 100) / 100;
-    const valueEur = Math.round(qtyTonnes * implicitPrice);
-
-    // Confidence: Verified customs trade statistics
-    const confidence: ConfidenceLevel = 'CONFIRMED';
-
-    economicFlows.push({
-      id: `flow_FR_${partnerId}_crude_${yp.year}`,
-      reporterCountryId: 'FR',
-      partnerCountryId: partnerId,
-      productId: 'crude_oil',
-      periodYear: yp.year,
-      flowType: 'import',
-      valueEur,
-      quantityTonnes: qtyTonnes,
-      implicitPriceEurPerTonne: implicitPrice,
-      confidence,
-      sourceId: 'dgddi',
-      datasetId: 'dgddi_annual_series',
-    });
-  });
-
-  // Monthly flows for the most recent years (2024, 2025, 2026) to provide high-resolution data
-  if (yp.year >= 2024) {
-    const maxMonth = yp.year === 2026 ? 6 : 12;
-    for (let m = 1; m <= maxMonth; m++) {
-      // Monthly seasonality multiplier (autumn/winter refinery turnaround, summer travel)
-      const seasonality = 1 + Math.sin((m / 12) * Math.PI * 2) * 0.08;
-      const monthFraction = (1 / 12) * seasonality;
-
-      Object.entries(yp.shares).forEach(([partnerId, share]) => {
-        const qtyTonnes = Math.round(yp.totalQuantityMt * 1000000 * share * monthFraction);
-        const premium = BLEND_PREMIUM_FACTORS[partnerId] || 1.0;
-        const priceVariation = 1 + Math.sin(m * 1.5) * 0.04;
-        const implicitPrice = Math.round(basePricePerTonneEur * premium * priceVariation * 100) / 100;
-        const valueEur = Math.round(qtyTonnes * implicitPrice);
-
-        economicFlows.push({
-          id: `flow_FR_${partnerId}_crude_${yp.year}_${m}`,
-          reporterCountryId: 'FR',
-          partnerCountryId: partnerId,
-          productId: 'crude_oil',
-          periodYear: yp.year,
-          periodMonth: m,
-          flowType: 'import',
-          valueEur,
-          quantityTonnes: qtyTonnes,
-          implicitPriceEurPerTonne: implicitPrice,
-          confidence: 'CONFIRMED',
-          sourceId: 'dgddi',
-          datasetId: 'dgddi_nc8_monthly',
-        });
-      });
-    }
-  }
-});
-
-// Minor export flow for France (re-export of crude or condensate to neighboring refiners)
-historicalYearPatterns.forEach((yp) => {
-  const exportQtyTonnes = Math.round(yp.totalQuantityMt * 1000000 * 0.015); // ~1.5% re-export (Germany, Belgium)
-  economicFlows.push({
-    id: `flow_FR_DE_crude_export_${yp.year}`,
-    reporterCountryId: 'FR',
-    partnerCountryId: 'GB',
-    productId: 'crude_oil',
-    periodYear: yp.year,
-    flowType: 'export',
-    valueEur: Math.round(exportQtyTonnes * 580),
-    quantityTonnes: exportQtyTonnes,
-    implicitPriceEurPerTonne: 580,
-    confidence: 'CONFIRMED',
-    sourceId: 'dgddi',
-    datasetId: 'dgddi_annual_series',
-  });
-});
 
 // ============================================================
 // 7. QUERY AND AGGREGATION SERVICE (Pure functions & analytical engine)

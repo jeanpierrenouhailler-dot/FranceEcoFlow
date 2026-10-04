@@ -14,7 +14,16 @@ import {
   getSankeyData,
   detectAnomalies,
   FlowQueryFilter,
+  getIngestionReport,
+  getRawSourceFiles,
 } from '../data/store.ts';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '../..');
 
 const router = Router();
 
@@ -261,4 +270,62 @@ router.get('/export', (req: Request, res: Response) => {
   }
 });
 
+// 13. GET /api/ingestion/report
+router.get('/ingestion/report', (_req: Request, res: Response) => {
+  try {
+    const report = getIngestionReport();
+    res.json({ data: report });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve ingestion report', details: String(error) });
+  }
+});
+
+// 14. GET /api/ingestion/files
+router.get('/ingestion/files', (_req: Request, res: Response) => {
+  try {
+    const files = getRawSourceFiles();
+    res.json({ data: files });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve ingested files', details: String(error) });
+  }
+});
+
+// 15. GET /api/ingestion/raw-sample
+router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
+  try {
+    const annualCsvPath = path.resolve(projectRoot, 'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv');
+    if (!fs.existsSync(annualCsvPath)) {
+      return res.status(404).json({ error: 'Raw dataset not found on disk' });
+    }
+    const content = fs.readFileSync(annualCsvPath, 'utf-8');
+    const lines = content.split('\n').filter((l) => l.trim().length > 0);
+    const limit = Math.min(parseInt((req.query.limit as string) || '25', 10), 100);
+    const sample = lines.slice(0, limit + 1);
+
+    res.json({
+      filePath: 'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv',
+      header: sample[0],
+      totalRows: lines.length - 1,
+      rowsReturned: sample.length - 1,
+      records: sample.slice(1).map((line, idx) => {
+        const cols = line.split(';');
+        return {
+          rowId: idx + 1,
+          year: cols[0],
+          flow: cols[1],
+          reporter: cols[2],
+          partner: cols[3],
+          nc8: cols[4],
+          valueEur: cols[5],
+          netMassKg: cols[6],
+          source: cols[7],
+        };
+      }),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to read raw sample', details: String(error) });
+  }
+});
+
 export default router;
+

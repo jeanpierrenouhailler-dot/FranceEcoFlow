@@ -1,8 +1,25 @@
-# Sources de Données & Traçabilité (Data Lineage)
+# Sources de Données, Fichiers Bruts & Pipeline d'Ingestion (Data Lineage)
 
-Chaque donnée présentée dans France Economic Flow Explorer est rattachée à son producteur d'origine et à un niveau de confiance vérifiable.
+Chaque donnée présentée dans France Economic Flow Explorer est rattachée à son fichier brut d'origine, à son empreinte cryptographique SHA-256 et à un niveau de confiance vérifiable.
+
+## 0. Architecture d'Ingestion des Fichiers Bruts (ETL)
+
+L'application n'utilise **aucune simulation synthétique, aucune boucle mathématique artificielle ni multiplicateur Brent/devises**. 
+
+Toutes les observations proviennent de fichiers CSV bruts stockés dans le répertoire `data/raw/` :
+- `data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv` : Série annuelle consolidée des importations de brut (DGDDI).
+- `data/raw/dgddi/dgddi_flux_brut_mensuel_2024_2026.csv` : Déclarations mensuelles détaillées au code NC8 27090090 (DGDDI).
+- `data/raw/sdes/sdes_receptions_brut_ports.csv` : Réceptions physiques par port et raffinerie (SDES).
+
+Le pipeline d'ingestion (`server/data/ingestion/`) :
+1. Charge les fichiers ligne par ligne en validant les types et codes douaniers.
+2. Calcule l'empreinte SHA-256 de chaque fichier source sur disque.
+3. Convertit la masse nette enregistrée en douane (kg) en tonnes métriques (`kg / 1000`).
+4. Calcule le **prix unitaire implicite** de façon strictement comptable : `VALEUR_CAF_EUROS / (MASSE_NETTE_KG / 1000)`.
+5. Exécute un ensemble de contrôles de qualité automatisés (`QualityAuditReport`) consultables via l'onglet **Audit & Données brutes** et l'API `GET /api/ingestion/report`.
 
 ## 1. Direction Générale des Douanes et Droits Indirects (DGDDI)
+
 - **Rôle :** Source primaire obligatoire pour les statistiques du commerce extérieur de la France.
 - **Produits suivis :** Pétrole brut sous le code SH 2709 et NC8 27090090 (huiles brutes de pétrole ou de minéraux bitumineux).
 - **Champs extraits :** Année, mois, pays partenaire déclarant, flux (importation CAF / exportation FOB), valeur en euros, masse nette en tonnes.

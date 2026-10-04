@@ -11,7 +11,9 @@ export type ActiveTab =
   | 'products'
   | 'infrastructures'
   | 'methodology'
-  | 'sources';
+  | 'sources'
+  | 'ingestion';
+
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -108,6 +110,18 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('ingestion')}
+            className={`transition-colors hover:text-white cursor-pointer py-1 relative ${
+              activeTab === 'ingestion' ? 'text-emerald-400 font-semibold' : ''
+            }`}
+            title="Registre d'audit et vérification des données brutes DGDDI"
+          >
+            Audit & Données brutes
+            {activeTab === 'ingestion' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400 rounded-full" />
+            )}
+          </button>
         </nav>
 
         {/* Zone 3: Primary actions */}
@@ -171,6 +185,12 @@ export const Header: React.FC<HeaderProps> = ({
           className={`whitespace-nowrap ${activeTab === 'methodology' ? 'text-cyan-400 font-semibold' : ''}`}
         >
           Méthodologie
+        </button>
+        <button
+          onClick={() => setActiveTab('ingestion')}
+          className={`whitespace-nowrap ${activeTab === 'ingestion' ? 'text-emerald-400 font-semibold' : ''}`}
+        >
+          Audit Données
         </button>
       </div>
     </header>

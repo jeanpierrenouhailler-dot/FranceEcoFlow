@@ -22,6 +22,7 @@ import { CountriesDirectory } from './features/countries/CountriesDirectory.tsx'
 import { InfrastructureDirectory } from './features/infrastructures/InfrastructureDirectory.tsx';
 import { MethodologyView } from './features/methodology/MethodologyView.tsx';
 import { SourcesView } from './features/sources/SourcesView.tsx';
+import { IngestionAuditView } from './features/ingestion/IngestionAuditView.tsx';
 import { ExportModal } from './features/export/ExportModal.tsx';
 import { FlowMap } from './components/map/FlowMap.tsx';
 import { Language } from './i18n/index.ts';
@@ -225,6 +226,8 @@ export default function App() {
             {activeTab === 'sources' && (
               <SourcesView sources={sources} datasets={datasets} />
             )}
+
+            {activeTab === 'ingestion' && <IngestionAuditView />}
           </>
         ) : null}
       </main>
@@ -250,6 +253,12 @@ export default function App() {
           </div>
           <div className="flex items-center gap-4 text-[11px] font-mono">
             <button
+              onClick={() => setActiveTab('ingestion')}
+              className="hover:text-emerald-400 text-emerald-500/90 font-semibold transition"
+            >
+              Audit & Données brutes
+            </button>
+            <button
               onClick={() => setActiveTab('methodology')}
               className="hover:text-slate-300 transition"
             >
@@ -262,6 +271,7 @@ export default function App() {
               Sources & Lignage
             </button>
             <span>v1.0.0 (MVP)</span>
+
           </div>
         </div>
       </footer>

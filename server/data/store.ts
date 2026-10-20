@@ -16,6 +16,8 @@ import {
   TimeseriesPoint,
 } from '../../src/types/index.ts';
 import { getIngestedFlows, getAuditReport, getIngestedFiles } from './ingestion/index.ts';
+import { getLoadedEconomicFlows } from '../ingestion/dgddi/index.ts';
+
 
 // ============================================================
 // 1. SOURCES & DATASETS (Lineage & Provenance)
@@ -678,13 +680,15 @@ export const transportRoutes: TransportRoute[] = [
 ];
 
 // ============================================================
-// 6. ECONOMIC FLOWS DATASET (Ingested from raw official DGDDI customs CSVs)
-// Fully ingested, normalized and validated by the ETL pipeline
+// 6. ECONOMIC FLOWS DATASET (Ingested from raw official DGDDI customs DAU declarations)
+// Fully ingested via 3-tier pipeline: Raw CSV -> PostgreSQL Staging -> Normalized -> Application
+// Preserves original NC8 code (27090090 / 27090010) and DAU references.
 // Direct net mass (kg -> tonnes) and declared CIF value (EUR).
 // Implicit unit price = declared CIF value / declared net mass.
 // No Brent multiplier, no currency conversion, no simulated trigonometric formulas.
 // ============================================================
-export const economicFlows: EconomicFlow[] = getIngestedFlows();
+export const economicFlows: EconomicFlow[] = getLoadedEconomicFlows();
+
 
 export function getIngestionReport() {
   return getAuditReport();

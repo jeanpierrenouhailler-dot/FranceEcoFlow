@@ -14,7 +14,12 @@ import {
   IngestionAuditReport,
   IngestedFileMetadata,
   RawCustomsSample,
+  DatabaseStatus,
+  SourceConnectorMeta,
+  InseeIndicator,
+  EnergyObservation,
 } from '../types/index.ts';
+
 
 const CACHE_PREFIX = 'fefe_cache_';
 
@@ -162,5 +167,53 @@ export const api = {
   async getRawCustomsSample(limit: number = 25): Promise<RawCustomsSample> {
     return fetchWithCache(`/api/ingestion/raw-sample?limit=${limit}`, `raw_sample_${limit}`);
   },
+
+  async getDatabaseStatus(): Promise<{ data: DatabaseStatus }> {
+    return fetchWithCache('/api/database/status', 'db_status');
+  },
+
+  async getSpatialInfrastructuresWithin(
+    lat: number,
+    lng: number,
+    radiusKm: number
+  ): Promise<{ center: [number, number]; radiusKm: number; count: number; data: any[] }> {
+    return fetchWithCache(
+      `/api/database/spatial/within?lat=${lat}&lng=${lng}&radius=${radiusKm}`,
+      `spatial_${lat}_${lng}_${radiusKm}`
+    );
+  },
+
+  async getSourceConnectors(): Promise<{ count: number; data: SourceConnectorMeta[] }> {
+    return fetchWithCache('/api/sources/registry', 'sources_registry');
+  },
+
+  async getSourcesHealth(): Promise<{ data: { [sourceId: string]: any } }> {
+    return fetchWithCache('/api/sources/health', 'sources_health');
+  },
+
+  async getInseeIndicators(code?: string): Promise<{ count: number; data: InseeIndicator[] }> {
+    const q = code ? `?code=${code}` : '';
+    return fetchWithCache(`/api/sources/insee${q}`, `insee_${code || 'all'}`);
+  },
+
+  async getEnergyObservations(metric?: string): Promise<{ count: number; data: EnergyObservation[] }> {
+    const q = metric ? `?metric=${metric}` : '';
+    return fetchWithCache(`/api/sources/energy${q}`, `energy_${metric || 'all'}`);
+  },
+
+  async triggerIngestion(): Promise<any> {
+    const res = await fetch('/api/sources/ingest', { method: 'POST' });
+    return res.json();
+  },
+
+  async resolveNC8Product(code: string): Promise<{ data: any }> {
+    return fetchWithCache(`/api/products/resolve-nc8?code=${code}`, `nc8_res_${code}`);
+  },
+
+  async getNomenclatures(): Promise<{ count: number; data: any[] }> {
+    return fetchWithCache('/api/products/nomenclatures', 'products_nomenclatures');
+  },
 };
+
+
 

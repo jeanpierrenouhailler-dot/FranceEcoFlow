@@ -2,12 +2,17 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import apiRouter from './server/api/routes.ts';
+import { initializeDatabase } from './server/db/init.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
+  // Initialize PostgreSQL / PostGIS and multi-source ingestion
+  await initializeDatabase();
+
   const app = express();
+
   const portArgIndex = process.argv.indexOf('--port');
   const portFromArg = portArgIndex !== -1 ? Number(process.argv[portArgIndex + 1]) : null;
   const PORT = Number(process.env.PORT) || portFromArg || 3000;

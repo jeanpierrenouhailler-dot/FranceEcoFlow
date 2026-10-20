@@ -77,7 +77,11 @@ export interface EconomicFlow {
   confidence: ConfidenceLevel;
   sourceId: string;
   datasetId: string;
+  rawNcCode?: string; // e.g. '27090090' or '27090010'
+  rawNcDescription?: string; // e.g. 'Huiles brutes de pétrole ou de minéraux bitumineux'
+  dauReference?: string; // Official DAU customs declaration reference
 }
+
 
 export interface TransportRoute {
   id: string;
@@ -213,4 +217,50 @@ export interface RawCustomsSample {
     source: string;
   }[];
 }
+
+export interface DatabaseStatus {
+  engine: string;
+  connected: boolean;
+  version: string;
+  postgisVersion?: string;
+  poolActiveCount: number;
+  poolIdleCount: number;
+  totalQueriesExecuted: number;
+  lastError?: string;
+}
+
+export interface SourceConnectorMeta {
+  id: string;
+  name: string;
+  provider: string;
+  type: string;
+  description: string;
+  officialUrl: string;
+}
+
+export interface InseeIndicator {
+  id: string;
+  indicatorCode: string;
+  provider: 'INSEE';
+  period: string;
+  value: number;
+  unit: string;
+  labelFr: string;
+  seriesId?: string;
+  retrievedAt: string;
+}
+
+export interface EnergyObservation {
+  id: string;
+  countryId: string;
+  flowMetric: string;
+  productId: string;
+  period: string;
+  volumeKboed?: number;
+  volumeTonnes?: number;
+  stockDaysNetImports?: number;
+  sourceId: string;
+  createdAt: string;
+}
+
 

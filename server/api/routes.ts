@@ -20,6 +20,11 @@ import {
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getDatabaseStatus } from '../db/connection.ts';
+import { dbRepository } from '../db/repository.ts';
+import { sourceRegistry } from '../ingestion/sources/index.ts';
+import { resolveProductFromNC8, getSupportedNomenclatures } from '../normalization/products.ts';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -163,7 +168,21 @@ router.get('/products', (_req: Request, res: Response) => {
   });
 });
 
+// GET /api/products/resolve-nc8 (Automated DGDDI NC8 -> Product normalizer)
+router.get('/products/resolve-nc8', (req: Request, res: Response) => {
+  const code = (req.query.code as string) || '27090090';
+  const resolution = resolveProductFromNC8(code);
+  res.json({ data: resolution });
+});
+
+// GET /api/products/nomenclatures (Catalog of supported NC8/HS classifications)
+router.get('/products/nomenclatures', (_req: Request, res: Response) => {
+  const nomenclatures = getSupportedNomenclatures();
+  res.json({ count: nomenclatures.length, data: nomenclatures });
+});
+
 router.get('/products/:id', (req: Request, res: Response) => {
+
   const product = products.find((p) => p.id === req.params.id);
   if (!product) {
     return res.status(404).json({ error: `Product '${req.params.id}' not found` });
@@ -293,17 +312,17 @@ router.get('/ingestion/files', (_req: Request, res: Response) => {
 // 15. GET /api/ingestion/raw-sample
 router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
   try {
-    const annualCsvPath = path.resolve(projectRoot, 'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv');
-    if (!fs.existsSync(annualCsvPath)) {
-      return res.status(404).json({ error: 'Raw dataset not found on disk' });
+    const rawDauPath = path.resolve(projectRoot, 'server/ingestion/raw/dgddi_dau_2015_2026.csv');
+    if (!fs.existsSync(rawDauPath)) {
+      return res.status(404).json({ error: 'Raw DAU dataset not found on disk' });
     }
-    const content = fs.readFileSync(annualCsvPath, 'utf-8');
+    const content = fs.readFileSync(rawDauPath, 'utf-8');
     const lines = content.split('\n').filter((l) => l.trim().length > 0);
     const limit = Math.min(parseInt((req.query.limit as string) || '25', 10), 100);
     const sample = lines.slice(0, limit + 1);
 
     res.json({
-      filePath: 'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv',
+      filePath: 'server/ingestion/raw/dgddi_dau_2015_2026.csv',
       header: sample[0],
       totalRows: lines.length - 1,
       rowsReturned: sample.length - 1,
@@ -312,13 +331,15 @@ router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
         return {
           rowId: idx + 1,
           year: cols[0],
-          flow: cols[1],
-          reporter: cols[2],
-          partner: cols[3],
-          nc8: cols[4],
-          valueEur: cols[5],
-          netMassKg: cols[6],
-          source: cols[7],
+          month: cols[1] === '0' ? 'Annuel' : cols[1],
+          flow: cols[2] === '1' ? 'Import (1)' : 'Export (2)',
+          reporter: cols[3],
+          partner: cols[4],
+          nc8: cols[5],
+          valueEur: cols[6],
+          netMassKg: cols[7],
+          dauReference: cols[8],
+          source: cols[9],
         };
       }),
     });
@@ -327,5 +348,81 @@ router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
   }
 });
 
+
+// 16. GET /api/database/status
+router.get('/database/status', (_req: Request, res: Response) => {
+  res.json({ data: getDatabaseStatus() });
+});
+
+// 17. GET /api/database/spatial/within (PostGIS ST_DWithin query)
+router.get('/database/spatial/within', async (req: Request, res: Response) => {
+  try {
+    const lat = parseFloat((req.query.lat as string) || '43.433'); // default Fos-sur-Mer
+    const lng = parseFloat((req.query.lng as string) || '4.885');
+    const radiusKm = parseFloat((req.query.radius as string) || '150');
+
+    const results = await dbRepository.findInfrastructuresWithinRadius(lng, lat, radiusKm);
+    res.json({
+      center: [lng, lat],
+      radiusKm,
+      count: results.length,
+      data: results,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Spatial query failed', details: String(err) });
+  }
+});
+
+// 18. GET /api/sources/registry (All 9 Source Connectors metadata)
+router.get('/sources/registry', (_req: Request, res: Response) => {
+  const connectors = sourceRegistry.getAllConnectors().map((c) => ({
+    id: c.id,
+    name: c.name,
+    provider: c.provider,
+    type: c.type,
+    description: c.description,
+    officialUrl: c.officialUrl,
+  }));
+  res.json({ count: connectors.length, data: connectors });
+});
+
+// 19. GET /api/sources/health (Live health check across 9 sources)
+router.get('/sources/health', async (_req: Request, res: Response) => {
+  const healthResults = await sourceRegistry.checkAllConnectorsHealth();
+  res.json({ data: healthResults });
+});
+
+// 20. GET /api/sources/insee (INSEE Macroeconomic series)
+router.get('/sources/insee', async (req: Request, res: Response) => {
+  const code = req.query.code as string;
+  const indicators = await dbRepository.findInseeIndicators(code);
+  res.json({ count: indicators.length, data: indicators });
+});
+
+
+// 21. GET /api/sources/energy (JODI / SDES energy balance observations)
+router.get('/sources/energy', async (req: Request, res: Response) => {
+  const metric = req.query.metric as string;
+  const observations = await dbRepository.findEnergyObservations(metric);
+  res.json({ count: observations.length, data: observations });
+});
+
+// 22. POST /api/sources/ingest (Trigger on-demand multi-source ingestion)
+router.post('/sources/ingest', async (_req: Request, res: Response) => {
+  try {
+    const result = await sourceRegistry.runAllIngestions();
+    res.json({
+      success: true,
+      message: `Ingestion completed: ${result.totalRecords} records across 9 sources in ${result.totalDurationMs} ms.`,
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Ingestion pipeline failed', details: String(err) });
+  }
+});
+
 export default router;
+
+
+
 

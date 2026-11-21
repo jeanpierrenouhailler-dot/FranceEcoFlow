@@ -29,6 +29,7 @@ export function ingestAllCustomsData(): {
     'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv',
     'data/raw/dgddi/dgddi_flux_brut_mensuel_2024_2026.csv',
     'server/ingestion/raw/dgddi_dau_2015_2026.csv',
+    'data/raw/sdes/sdes_receptions_brut_ports.csv',
   ];
   const provenance = datasetPaths.map((filePath) => getDatasetProvenance(filePath));
   const files = provenance.map((record) => {

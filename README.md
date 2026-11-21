@@ -61,7 +61,29 @@ Compose exige des variables `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
 
 ---
 
-## 4. Documentation Détaillée
+## 4. Préparation à la production
+
+Les étapes ci-dessous sont des critères de sortie obligatoires. L’état reflète les vérifications disponibles au 21 novembre 2026 ; les fonctions indisponibles restent désactivées plutôt que de retourner des données non vérifiées.
+
+| Étape | État actuel | Critère de sortie |
+|---|---|---|
+| 1. Authentifier les données historiques | **Bloquée** — les quatre fichiers recensés ont une empreinte SHA-256, mais leur publication d’origine, leur date d’extraction, leur licence et leurs transformations ne sont pas établies. Ils restent en quarantaine. | Pour chaque fichier, retrouver la publication ou extraction originale, vérifier source, version, période, colonnes, unités et licence, comparer les agrégats à la source lorsque possible, documenter toute transformation et recalculer l’empreinte. Ne retirer de quarantaine qu’après vérification indépendante. |
+| 2. Implémenter les connecteurs | **Bloquée** — les neuf connecteurs sont déclarés indisponibles ; aucun ne réalise d’extraction live. | Implémenter et tester les extractions DGDDI, INSEE, Eurostat, UN Comtrade, JODI, EIA, SDES, OpenStreetMap/Overpass et IGN. Gérer les accès, limites de débit, pagination, erreurs, validation du schéma et des unités, normalisation et persistance. Ne pas activer un connecteur sans contrat de source validé. |
+| 3. Valider PostgreSQL/PostGIS | **Bloquée** — la base réelle n’a pas été testée dans l’environnement de travail. Une divergence statique existe : le dépôt lit `transport_routes.distance_km`, colonne absente de la migration initiale ; le schéma runtime est appliqué séparément sans versionnement. | Réconcilier et versionner les migrations, vérifier qu’elles ne détruisent pas les données, puis tester le démarrage, PostGIS, écritures/lectures, requêtes spatiales, migrations à blanc et mises à niveau sur une vraie base. PostgreSQL doit rester la source de vérité métier. |
+| 4. Compléter les tests de production | **Partiellement validée** — 25 tests unitaires, le contrôle TypeScript et le build passent ; aucun test d’intégration réel PostgreSQL/PostGIS ni recette frontend complète n’a été exécuté. | Ajouter des tests anti-données fictives, tests de connecteurs sur fixtures de test et services contrôlés, tests d’intégration base/API et PostGIS, erreurs API côté frontend, et contrôles Docker en CI. Ne pas faire dépendre la suite unitaire de services externes disponibles en permanence. |
+| 5. Recetter en préproduction | **Non exécutée** — aucun environnement staging, `APP_URL`, `DATABASE_URL` ou Docker n’était disponible dans l’environnement d’audit. | Déployer avec secrets gérés hors du dépôt, HTTPS, sauvegardes et journalisation ; vérifier les health checks, l’ingestion, les données affichées, exports, carte, cache et erreurs. Promouvoir uniquement après validation documentée de l’ensemble des étapes précédentes. |
+
+Le dernier build réussit, mais signale un bundle JavaScript supérieur à 500 kB. Ce point de performance est à examiner ; il ne remplace pas les validations de données, de base et de déploiement ci-dessus.
+
+### État des données intégrées
+
+`data/provenance.json` recense les quatre fichiers historiques et leurs empreintes, sans les qualifier d’authentiques. Les fichiers DGDDI annuels et mensuels, le DAU historique et le fichier SDES restent en quarantaine. L’ingestion ne les publie pas et les API de flux répondent indisponible tant qu’un jeu de données vérifié n’est pas chargé.
+
+Les clés `COMTRADE_API_KEY` et `EIA_API_KEY` doivent être fournies par un gestionnaire de secrets ou l’environnement de déploiement lorsqu’elles sont nécessaires. Ne placez aucune clé réelle dans le dépôt ni dans les rapports.
+
+---
+
+## 5. Documentation détaillée
 
 - [Architecture système & composants](docs/architecture.md)
 - [Sources de données & Lignage](docs/data-sources.md)
@@ -71,9 +93,11 @@ Compose exige des variables `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
 
 ---
 
-## 5. Licences & Références des Données
+## 6. Licences & références des données
 
-- Données douanières : **DGDDI** (Licence Ouverte 2.0 Etalab)
-- Données énergétiques : **SDES / Ministère de la Transition Écologique**
-- Données européennes : **Eurostat** (CC BY 4.0)
-- Données cartographiques : **OpenStreetMap Contributors** (ODbL 1.0)
+Les organismes ci-dessous sont des sources de référence envisagées ; les licences applicables aux fichiers actuellement livrés avec le dépôt n’ont pas été établies. Aucun de ces fichiers ne doit être redistribué ou présenté comme authentifié sur la seule base de ce référencement.
+
+- Commerce extérieur : **DGDDI** — licence et jeu de données à vérifier.
+- Données énergétiques françaises : **SDES** — licence et jeu de données à vérifier.
+- Données européennes : **Eurostat** — licence et jeu de données à vérifier.
+- Données géographiques : **OpenStreetMap Contributors** — vérifier la licence et l’attribution pour chaque extraction.

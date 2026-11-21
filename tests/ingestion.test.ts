@@ -10,7 +10,7 @@ describe('Quarantined historical data and provenance checks', () => {
     assert.equal(flows.length, 0);
     assert.equal(report.totalRecordsLoaded, 0);
     assert.equal(report.overallStatus, 'FAILED');
-    assert.ok(files.length >= 2);
+    assert.equal(files.length, 4);
     assert.ok(files.every((file) => file.provenanceStatus === 'QUARANTINED'));
     assert.equal(report.checks.find((check) => check.checkId === 'CHECK_DATASET_PROVENANCE')?.status, 'FAILED');
   });

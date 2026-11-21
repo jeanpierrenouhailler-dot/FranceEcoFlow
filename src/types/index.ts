@@ -48,7 +48,8 @@ export interface Source {
   title: string;
   url: string;
   license: string;
-  retrievedAt: string;
+  retrievedAt?: string;
+  provenanceStatus?: 'VERIFIED' | 'UNVERIFIED' | 'QUARANTINED';
   methodologyUrl?: string;
   notes?: string;
 }
@@ -59,7 +60,8 @@ export interface Dataset {
   name: string;
   frequency: 'monthly' | 'quarterly' | 'annual';
   updateFrequency: string;
-  lastUpdated: string;
+  lastUpdated?: string;
+  provenanceStatus?: 'VERIFIED' | 'UNVERIFIED' | 'QUARANTINED';
   methodologyUrl: string;
 }
 
@@ -103,11 +105,11 @@ export interface Infrastructure {
   name: string;
   type: InfrastructureType;
   countryId: string;
-  operator: string;
+  operator?: string;
   coordinates: [number, number]; // [lng, lat]
-  capacityAnnualTonnes: number;
-  currentStatus: 'active' | 'transition' | 'standby';
-  descriptionFr: string;
+  capacityAnnualTonnes?: number;
+  currentStatus: 'active' | 'transition' | 'standby' | 'unknown';
+  descriptionFr?: string;
   osmId?: string;
   confidence: ConfidenceLevel;
   sourceId: string;
@@ -173,8 +175,10 @@ export interface IngestedFileMetadata {
   fileSizeBytes: number;
   sha256Hash: string;
   recordCount: number;
-  ingestedAt: string;
+  ingestedAt?: string;
   sourceProvider: string;
+  provenanceStatus?: 'VERIFIED' | 'UNVERIFIED' | 'QUARANTINED';
+  provenanceReason?: string;
 }
 
 export interface QualityCheckResult {
@@ -196,6 +200,7 @@ export interface IngestionAuditReport {
   annualRecordsLoaded: number;
   monthlyRecordsLoaded: number;
   filesIngested: IngestedFileMetadata[];
+  filesQuarantined?: IngestedFileMetadata[];
   checks: QualityCheckResult[];
   overallStatus: 'PASSED' | 'WARNING' | 'FAILED';
 }

@@ -15,12 +15,10 @@ export class DgddiConnector implements SourceConnector<EconomicFlow> {
   readonly name = 'Direction Générale des Douanes et Droits Indirects';
   readonly provider = 'Douanes Françaises (Ministère de l’Économie et des Finances)';
   readonly type = 'file';
-  readonly description = 'Statistiques officielles du commerce extérieur de la France (DAU / Single Administrative Document, code NC8 27090090 et 27090010).';
+  readonly description = 'Source de référence envisagée : statistiques douanières françaises. Extraction live non implémentée ; fichiers historiques en quarantaine.';
   readonly officialUrl = 'https://lekiosque.finances.gouv.fr';
 
-  async fetchRaw(): Promise<any> {
-    return importRawDGDDIFile();
-  }
+  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
 
   async parse(rawResult: any): Promise<EconomicFlow[]> {
     const { flows } = normalizeDGDDIRows(rawResult.rows);
@@ -42,19 +40,7 @@ export class DgddiConnector implements SourceConnector<EconomicFlow> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> {
-    const start = Date.now();
-    const csvPath = path.resolve(projectRoot, 'server/ingestion/raw/dgddi_dau_2015_2026.csv');
-    const exists = fs.existsSync(csvPath);
-    return {
-      reachable: exists,
-      latencyMs: Date.now() - start,
-      message: exists
-        ? 'Registre brut DAU DGDDI accessible sur disque (codes NC8 27090090 et 27090010 conservés).'
-        : 'Fichier brut DAU introuvable.',
-      lastCheckedAt: new Date().toISOString(),
-    };
-  }
+  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
 
   async run(): Promise<IngestionResult<EconomicFlow>> {
     const start = Date.now();

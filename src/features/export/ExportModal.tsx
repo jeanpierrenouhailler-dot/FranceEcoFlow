@@ -24,10 +24,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   if (!isOpen) return null;
 
   const handleDownloadCSV = () => {
-    const csvUrl = `/api/export?format=csv&from=${filters.from || 2015}&to=${filters.to || 2026}&product=${filters.product || 'crude_oil'}&flow=${filters.flow || 'import'}`;
+    const query = new URLSearchParams({
+      format: 'csv',
+      product: filters.product || 'crude_oil',
+      flow: filters.flow || 'import',
+    });
+    if (filters.from !== undefined) query.set('from', String(filters.from));
+    if (filters.to !== undefined) query.set('to', String(filters.to));
+    const csvUrl = `/api/export?${query.toString()}`;
+    const period = [filters.from, filters.to].filter((year) => year !== undefined).join('_') || 'periode_non_precisee';
     const a = document.createElement('a');
     a.href = csvUrl;
-    a.download = `rapport_france_flux_${filters.from || 2015}_${filters.to || 2026}.csv`;
+    a.download = `france_eco_flow_${period}.csv`;
     a.click();
     setDownloadedFormat('CSV');
     setTimeout(() => setDownloadedFormat(null), 3000);
@@ -36,20 +44,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const handleDownloadJSON = () => {
     const payload = {
       exportMetadata: {
-        title: 'France Economic Flow Explorer — Rapport officiel',
+        title: 'FranceEcoFlow — export de données',
         exportedAt: new Date().toISOString(),
         filters,
         summary,
       },
       partners: suppliers,
-      source: 'DGDDI (Douanes Françaises) / OpenStreetMap',
+      provenance: 'À vérifier pour chaque jeu de données.',
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rapport_france_flux_${filters.from || 2015}_${filters.to || 2026}.json`;
+    const period = [filters.from, filters.to].filter((year) => year !== undefined).join('_') || 'periode_non_precisee';
+    a.download = `france_eco_flow_${period}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setDownloadedFormat('JSON');
@@ -109,7 +118,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <div className="flex items-center gap-2.5">
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <div className="text-left">
-                <span className="font-semibold block text-slate-200">Tableur CSV officiel</span>
+                <span className="font-semibold block text-slate-200">Exporter au format CSV</span>
                 <span className="text-slate-500 text-[11px]">Format universel compatible Excel / LibreOffice</span>
               </div>
             </div>
@@ -154,7 +163,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         <div className="pt-2 text-center text-[11px] text-slate-500">
-          Source des données douanières : Direction Générale des Douanes (DGDDI)
+          La provenance des données exportées doit être vérifiée.
         </div>
       </div>
     </div>

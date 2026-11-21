@@ -1,6 +1,6 @@
 import React from 'react';
 import { Source, Dataset } from '../../types/index.ts';
-import { Database, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Database, ExternalLink } from 'lucide-react';
 
 interface SourcesViewProps {
   sources: Source[];
@@ -13,10 +13,10 @@ export const SourcesView: React.FC<SourcesViewProps> = ({ sources, datasets }) =
       <div className="border-b border-slate-800 pb-5">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-3">
           <Database className="w-6 h-6 text-cyan-400" />
-          <span>Répertoire des sources officielles & Registre de lignage</span>
+          <span>Sources référencées & état de vérification</span>
         </h1>
         <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-          Toutes les données présentées dans l'application proviennent exclusivement de registres douaniers, d'agences statistiques nationales ou internationales et de cartographies libres vérifiées.
+          Ce répertoire liste des sources potentielles. Les extractions et les licences n’ont pas encore été vérifiées ; aucun statut de source ne vaut preuve de provenance.
         </p>
       </div>
 
@@ -38,17 +38,20 @@ export const SourcesView: React.FC<SourcesViewProps> = ({ sources, datasets }) =
                     </span>
                   </h3>
                   <span className="text-xs text-slate-400">{src.title}</span>
+                  <span className="block text-[11px] font-mono text-amber-400">
+                    Provenance : {src.provenanceStatus || 'UNVERIFIED'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                    Licence : {src.license}
+                    Licence : {src.license || 'Non vérifiée'}
                   </span>
                   <a
                     href={src.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1 text-slate-400 hover:text-white transition"
-                    title="Accéder au portail officiel"
+                    title="Consulter le portail de référence"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
@@ -71,8 +74,9 @@ export const SourcesView: React.FC<SourcesViewProps> = ({ sources, datasets }) =
                         <span className="font-semibold text-slate-200 block">{ds.name}</span>
                         <div className="flex items-center justify-between text-slate-500 font-mono">
                           <span>Fréquence : {ds.frequency}</span>
-                          <span>Dernière rév. : {ds.lastUpdated}</span>
+                          <span>Dernière extraction : {ds.lastUpdated || 'Aucune vérifiée'}</span>
                         </div>
+                        <span className="text-amber-400 font-mono">Provenance : {ds.provenanceStatus || 'UNVERIFIED'}</span>
                       </div>
                     ))}
                   </div>

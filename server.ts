@@ -1,8 +1,10 @@
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import apiRouter from './server/api/routes.ts';
 import { initializeDatabase } from './server/db/init.ts';
+import { getDatabaseStatus } from './server/db/connection.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,11 +38,14 @@ async function startServer() {
 
   // Health check
   app.get('/api/health', (_req: Request, res: Response) => {
-    res.json({
-      status: 'healthy',
+    const database = getDatabaseStatus();
+    const healthy = database.connected;
+    res.status(healthy ? 200 : 503).json({
+      status: healthy ? 'healthy' : 'degraded',
       app: 'France Economic Flow Explorer',
       version: '1.0.0',
       timestamp: new Date().toISOString(),
+      database,
     });
   });
 

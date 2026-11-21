@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS trade_flows (
     implicit_price_eur_per_tonne NUMERIC(14, 2) GENERATED ALWAYS AS (
         CASE WHEN quantity_tonnes > 0 THEN ROUND(value_eur / quantity_tonnes, 2) ELSE 0 END
     ) STORED,
-    confidence VARCHAR(32) NOT NULL DEFAULT 'CONFIRMED',
+    confidence VARCHAR(32) NOT NULL DEFAULT 'UNKNOWN',
     source_id VARCHAR(64) REFERENCES sources(id),
     dataset_id VARCHAR(64) REFERENCES datasets(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -99,10 +99,10 @@ CREATE TABLE IF NOT EXISTS infrastructures (
     operator VARCHAR(128),
     geom GEOMETRY(Geometry, 4326),
     capacity_annual_tonnes NUMERIC(14, 2),
-    current_status VARCHAR(32) DEFAULT 'active',
+    current_status VARCHAR(32) NOT NULL DEFAULT 'unknown',
     description_fr TEXT,
     osm_id VARCHAR(64),
-    confidence VARCHAR(32) NOT NULL DEFAULT 'DOCUMENTED',
+    confidence VARCHAR(32) NOT NULL DEFAULT 'UNKNOWN',
     source_id VARCHAR(64) REFERENCES sources(id)
 );
 

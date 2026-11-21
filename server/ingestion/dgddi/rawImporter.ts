@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { RawDGDDIRow } from '../../normalization/types.ts';
 import { executeQuery } from '../../db/connection.ts';
+import { isDatasetVerified } from '../../data/ingestion/provenance.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,6 +72,10 @@ export function importRawDGDDIFile(filePath?: string): RawImportResult {
 }
 
 export async function persistRawDGDDIRowsToStaging(rows: RawDGDDIRow[], checksum: string): Promise<void> {
+  if (!isDatasetVerified('server/ingestion/raw/dgddi_dau_2015_2026.csv')) {
+    throw new Error('Refusing to persist a DGDDI file whose provenance is not verified.');
+  }
+
   const insertSql = `
     INSERT INTO raw_dgddi_declarations
       (annee, mois, flux, pays_declarant, pays_partenaire, code_nc8, valeur_caf_euros, masse_nette_kg, dau_reference, source, checksum_sha256)
@@ -79,22 +84,18 @@ export async function persistRawDGDDIRowsToStaging(rows: RawDGDDIRow[], checksum
   `;
 
   for (const r of rows) {
-    try {
-      await executeQuery(insertSql, [
-        r.annee,
-        r.mois,
-        r.flux,
-        r.pays_declarant,
-        r.pays_partenaire,
-        r.code_nc8,
-        r.valeur_caf_euros,
-        r.masse_nette_kg,
-        r.dau_reference,
-        r.source,
-        checksum,
-      ]);
-    } catch {
-      // In-memory fallback
-    }
+    await executeQuery(insertSql, [
+      r.annee,
+      r.mois,
+      r.flux,
+      r.pays_declarant,
+      r.pays_partenaire,
+      r.code_nc8,
+      r.valeur_caf_euros,
+      r.masse_nette_kg,
+      r.dau_reference,
+      r.source,
+      checksum,
+    ]);
   }
 }

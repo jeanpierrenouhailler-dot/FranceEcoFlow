@@ -11,6 +11,7 @@ export function runDataQualityChecks(
   durationMs: number
 ): IngestionAuditReport {
   const checks: QualityCheckResult[] = [];
+  const hasFlowRecords = flows.length > 0;
 
   // Check 1: Non-negativity & Non-zero
   let nonNegativePassed = 0;
@@ -26,11 +27,15 @@ export function runDataQualityChecks(
     checkId: 'CHECK_NON_NEGATIVE_VALUES',
     name: 'Non-négativité des valeurs et volumes',
     description: 'Vérifie qu’aucune valeur monétaire CAF ni aucun volume en tonnes n’est négatif ou nul.',
-    status: nonNegativeFailed === 0 ? 'PASSED' : 'FAILED',
+    status: hasFlowRecords && nonNegativeFailed === 0 ? 'PASSED' : 'FAILED',
     recordsTested: flows.length,
     passedCount: nonNegativePassed,
     failedCount: nonNegativeFailed,
-    details: nonNegativeFailed === 0 ? 'Toutes les observations présentent des valeurs strictement positives.' : `${nonNegativeFailed} observations non conformes.`,
+    details: !hasFlowRecords
+      ? 'Aucune observation à contrôler.'
+      : nonNegativeFailed === 0
+        ? 'Toutes les observations présentent des valeurs strictement positives.'
+        : `${nonNegativeFailed} observations non conformes.`,
   });
 
   // Check 2: Implicit Price Validity (No NaN, No Infinity, In Realistic Economic Boundary)
@@ -52,11 +57,15 @@ export function runDataQualityChecks(
     checkId: 'CHECK_IMPLICIT_PRICE_COHERENCE',
     name: 'Cohérence du prix unitaire implicite',
     description: 'Vérifie l’absence de NaN/Infinity et valide que le ratio valeur/masse se situe dans la plage économique des bruts (100 - 1 500 €/t).',
-    status: priceFailed === 0 ? 'PASSED' : 'FAILED',
+    status: hasFlowRecords && priceFailed === 0 ? 'PASSED' : 'FAILED',
     recordsTested: flows.length,
     passedCount: pricePassed,
     failedCount: priceFailed,
-    details: priceFailed === 0 ? 'Tous les prix unitaires implicites sont cohérents avec les cours observés.' : `${priceFailed} prix unitaires aberrants.`,
+    details: !hasFlowRecords
+      ? 'Aucune observation à contrôler.'
+      : priceFailed === 0
+        ? 'Tous les prix unitaires implicites respectent les seuils configurés.'
+        : `${priceFailed} prix unitaires aberrants.`,
   });
 
   // Check 3: Partner Country Code Conformance
@@ -73,52 +82,68 @@ export function runDataQualityChecks(
     checkId: 'CHECK_ISO_PARTNER_CODES',
     name: 'Conformité des codes pays partenaires (ISO 3166-1 alpha-2)',
     description: 'Assure que chaque pays d’origine correspond à une nomenclature d’État valide dans les tables douanières.',
-    status: isoFailed === 0 ? 'PASSED' : 'WARNING',
+    status: !hasFlowRecords ? 'FAILED' : isoFailed === 0 ? 'PASSED' : 'WARNING',
     recordsTested: flows.length,
     passedCount: isoPassed,
     failedCount: isoFailed,
-    details: isoFailed === 0 ? '100% des codes pays partenaires sont conformes au standard ISO.' : `${isoFailed} codes non répertoriés.`,
+    details: !hasFlowRecords
+      ? 'Aucune observation à contrôler.'
+      : isoFailed === 0
+        ? '100% des codes pays partenaires sont conformes au standard ISO.'
+        : `${isoFailed} codes non répertoriés.`,
   });
 
-  // Check 4: Temporal Completeness (2015 to 2026)
+  // Check 4: Temporal Completeness
   const annualFlows = flows.filter((f) => f.periodMonth === undefined);
   const yearsPresent = new Set(annualFlows.map((f) => f.periodYear));
-  let missingYears: number[] = [];
-  for (let yr = 2015; yr <= 2026; yr++) {
-    if (!yearsPresent.has(yr)) {
-      missingYears.push(yr);
+  const orderedYears = [...yearsPresent].sort((a, b) => a - b);
+  const missingYears: number[] = [];
+  if (orderedYears.length > 0) {
+    for (let year = orderedYears[0]; year <= orderedYears[orderedYears.length - 1]; year++) {
+      if (!yearsPresent.has(year)) {
+        missingYears.push(year);
+      }
     }
   }
+  const hasAnnualData = orderedYears.length > 0;
   checks.push({
     checkId: 'CHECK_TEMPORAL_SERIES_COMPLETENESS',
-    name: 'Complétude temporelle des séries annuelles (2015 - 2026)',
-    description: 'Vérifie la continuité chronologique sans rupture d’année dans le registre douanier.',
-    status: missingYears.length === 0 ? 'PASSED' : 'FAILED',
-    recordsTested: 12,
-    passedCount: 12 - missingYears.length,
+    name: 'Continuité temporelle des séries annuelles',
+    description: 'Vérifie la continuité entre les premières et dernières années présentes dans les données.',
+    status: hasAnnualData && missingYears.length === 0 ? 'PASSED' : 'FAILED',
+    recordsTested: orderedYears.length,
+    passedCount: Math.max(0, orderedYears.length - missingYears.length),
     failedCount: missingYears.length,
-    details: missingYears.length === 0 ? 'Les 12 années consécutives (2015 à 2026) sont intégralement couvertes.' : `Années manquantes: ${missingYears.join(', ')}.`,
+    details: !hasAnnualData
+      ? 'Aucune observation annuelle à contrôler.'
+      : missingYears.length === 0
+        ? `Toutes les années entre ${orderedYears[0]} et ${orderedYears[orderedYears.length - 1]} sont présentes.`
+        : `Années manquantes: ${missingYears.join(', ')}.`,
   });
 
   // Check 5: Source Attribution & Provenance Traceability
+  const filesVerified =
+    filesMetadata.length > 0 && filesMetadata.every((file) => file.provenanceStatus === 'VERIFIED');
   let sourcePassed = 0;
-  let sourceFailed = 0;
   for (const f of flows) {
-    if (f.sourceId === 'dgddi' && f.confidence === 'CONFIRMED') {
+    if (filesVerified && f.sourceId === 'dgddi' && f.confidence === 'CONFIRMED') {
       sourcePassed++;
-    } else {
-      sourceFailed++;
     }
   }
+  const sourceFailed = flows.length - sourcePassed;
   checks.push({
     checkId: 'CHECK_PROVENANCE_LINEAGE',
     name: 'Traçabilité et attribution de la source primaire',
-    description: 'Vérifie que chaque enregistrement est relié au fournisseur officiel (DGDDI) avec niveau de confiance CONFIRMED.',
-    status: sourceFailed === 0 ? 'PASSED' : 'FAILED',
+    description: 'Vérifie que chaque observation est reliée à un fichier vérifié et attribuée à la DGDDI.',
+    status: hasFlowRecords && filesVerified && sourceFailed === 0 ? 'PASSED' : 'FAILED',
     recordsTested: flows.length,
     passedCount: sourcePassed,
     failedCount: sourceFailed,
-    details: 'Chaque observation est rattachée au registre des douanes françaises.',
+    details: filesVerified
+      ? sourceFailed === 0
+        ? 'Chaque observation est rattachée à un fichier dont la provenance a été vérifiée.'
+        : `${sourceFailed} observations sans lignage vérifié.`
+      : 'Aucun fichier ingéré ne possède actuellement un statut de provenance vérifiée.',
   });
 
   const overallStatus = checks.some((c) => c.status === 'FAILED')

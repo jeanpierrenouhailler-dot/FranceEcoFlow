@@ -35,7 +35,7 @@ export const translations = {
       showInfrastructures: 'Infrastructures logistiques',
     },
     confidence: {
-      CONFIRMED: 'Confirmé (Statistiques officielles)',
+      CONFIRMED: 'Confirmé (provenance vérifiée)',
       DOCUMENTED: 'Documenté (Sources croisées)',
       PROBABLE: 'Probable (Estimation déduite)',
       UNKNOWN: 'Non déterminé',
@@ -47,7 +47,7 @@ export const translations = {
       print: 'Imprimer / PDF',
     },
     offline: {
-      banner: 'Mode hors-ligne — Données locales en cache utilisées',
+      banner: 'Hors ligne — données API indisponibles ; aucun cache de données vérifiées',
     },
   },
   en: {
@@ -84,7 +84,7 @@ export const translations = {
       showInfrastructures: 'Logistic Infrastructures',
     },
     confidence: {
-      CONFIRMED: 'Confirmed (Official Statistics)',
+      CONFIRMED: 'Confirmed (verified provenance)',
       DOCUMENTED: 'Documented (Cross-referenced)',
       PROBABLE: 'Probable (Inferred estimate)',
       UNKNOWN: 'Undetermined',
@@ -96,7 +96,7 @@ export const translations = {
       print: 'Print / PDF',
     },
     offline: {
-      banner: 'Offline Mode — Using local cached data',
+      banner: 'Offline — API data unavailable; no cache of verified data is used',
     },
   },
 };

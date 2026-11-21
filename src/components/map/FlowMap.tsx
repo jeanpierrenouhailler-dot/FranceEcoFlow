@@ -347,13 +347,13 @@ export const FlowMap: React.FC<FlowMapProps> = ({
             <div className="truncate">
               <h4 className="text-xs font-semibold truncate">{hoveredInfra.name}</h4>
               <span className="text-[10px] text-slate-400 uppercase font-mono">
-                {hoveredInfra.type} · {hoveredInfra.operator}
+                {hoveredInfra.type} · {hoveredInfra.operator || 'Opérateur inconnu'}
               </span>
             </div>
           </div>
 
           <div className="mt-2 text-[11px] text-slate-300 line-clamp-3">
-            {hoveredInfra.descriptionFr}
+            {hoveredInfra.descriptionFr || 'Aucune description vérifiée.'}
           </div>
 
           <div className="mt-2 pt-2 border-t border-slate-800 text-[11px] flex justify-between text-slate-400">

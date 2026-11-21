@@ -29,7 +29,7 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
             <span>Infrastructures pétrolières et portuaires françaises</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Terminaux d'importation en eau profonde, plateformes de raffinage et oléoducs stratégiques (Source : OpenStreetMap & SDES).
+            Aucune infrastructure n’est publiée tant qu’une extraction et sa provenance ne sont pas vérifiées.
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
                   <div>
                     <h3 className="text-sm font-semibold text-white">{item.name}</h3>
                     <span className="text-[11px] font-mono text-slate-400">
-                      Opérateur : {item.operator}
+                      Opérateur : {item.operator || 'Non renseigné'}
                     </span>
                   </div>
                 </div>
@@ -100,7 +100,7 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
               </div>
 
               <p className="mt-3.5 text-xs text-slate-300 leading-relaxed">
-                {item.descriptionFr}
+                {item.descriptionFr || 'Aucune description vérifiée.'}
               </p>
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs bg-slate-950/60 p-3 rounded border border-slate-800/80">
@@ -112,7 +112,7 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[11px]">Statut opérationnel</span>
-                  <span className="font-mono text-emerald-400 font-semibold uppercase text-[11px]">
+                  <span className="font-mono text-slate-400 font-semibold uppercase text-[11px]">
                     ● {item.currentStatus}
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
       <SourceCitation
         sourceId="osm"
         datasetName="OpenStreetMap — Requêtes Overpass API sur les infrastructures d’hydrocarbures"
-        notes="Géométries vectorielles et données de capacité vérifiées auprès des rapports d'activité des autorités portuaires (GPMM, HAROPA, Nantes Saint-Nazaire) et de l'UFIP."
+        notes="La source et les capacités ne sont pas vérifiées ; les valeurs inconnues doivent rester absentes."
       />
     </div>
   );

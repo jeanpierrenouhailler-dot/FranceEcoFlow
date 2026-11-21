@@ -2,16 +2,25 @@ import { EconomicFlow } from '../../../src/types/index.ts';
 import { EconomicIndicator, EnergyObservation } from '../../db/repository.ts';
 
 export type SourceType = 'api' | 'file' | 'sdmx' | 'overpass' | 'wmts';
+export type IngestionStatus =
+  | 'SUCCESS'
+  | 'PARTIAL'
+  | 'FAILED'
+  | 'NOT_CONFIGURED'
+  | 'NOT_AVAILABLE'
+  | 'STALE';
 
 export interface ConnectorHealth {
   reachable: boolean;
   latencyMs: number;
   message: string;
   lastCheckedAt: string;
+  status?: IngestionStatus;
 }
 
 export interface IngestionResult<T> {
   sourceId: string;
+  status?: IngestionStatus;
   recordsCount: number;
   durationMs: number;
   records: T[];
@@ -20,6 +29,7 @@ export interface IngestionResult<T> {
 
 export interface SourceConnector<T = any> {
   readonly id: string;
+  readonly liveExtractionImplemented?: boolean;
   readonly name: string;
   readonly provider: string;
   readonly type: SourceType;

@@ -13,16 +13,10 @@ export class SdesConnector implements SourceConnector<EnergyObservation> {
   readonly name = 'Service des Données et Études Statistiques (SDES)';
   readonly provider = 'Ministère de la Transition Écologique et de la Cohésion des Territoires';
   readonly type = 'file';
-  readonly description = 'Bilan énergétique de la France : réceptions portuaires effectives, capacités de raffinage et approvisionnement des raffineries intérieures par oléoducs.';
+  readonly description = 'Source de référence envisagée : bilans énergétiques français du SDES. Extraction live non implémentée.';
   readonly officialUrl = 'https://www.statistiques.developpement-durable.gouv.fr';
 
-  async fetchRaw(): Promise<string> {
-    const csvPath = path.resolve(projectRoot, 'data/raw/sdes/sdes_receptions_brut_ports.csv');
-    if (!fs.existsSync(csvPath)) {
-      throw new Error(`SDES raw dataset not found: ${csvPath}`);
-    }
-    return fs.readFileSync(csvPath, 'utf-8');
-  }
+  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
 
   async parse(rawCsv: string): Promise<EnergyObservation[]> {
     const lines = rawCsv.split('\n').filter((l) => l.trim().length > 0);
@@ -68,18 +62,7 @@ export class SdesConnector implements SourceConnector<EnergyObservation> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> {
-    const csvPath = path.resolve(projectRoot, 'data/raw/sdes/sdes_receptions_brut_ports.csv');
-    const exists = fs.existsSync(csvPath);
-    return {
-      reachable: exists,
-      latencyMs: 8,
-      message: exists
-        ? 'Données SDES vérifiées : réceptions physiques des 4 grands terminaux portuaires français chargées.'
-        : 'Fichier SDES introuvable sur disque.',
-      lastCheckedAt: new Date().toISOString(),
-    };
-  }
+  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
 
   async run(): Promise<IngestionResult<EnergyObservation>> {
     const start = Date.now();

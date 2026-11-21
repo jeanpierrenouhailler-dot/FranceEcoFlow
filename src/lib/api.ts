@@ -23,17 +23,6 @@ import {
 
 const CACHE_PREFIX = 'fefe_cache_';
 
-function getLocalCache<T>(key: string): T | null {
-  try {
-    const raw = localStorage.getItem(CACHE_PREFIX + key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed.data as T;
-  } catch {
-    return null;
-  }
-}
-
 function setLocalCache<T>(key: string, data: T): void {
   try {
     localStorage.setItem(
@@ -49,22 +38,13 @@ function setLocalCache<T>(key: string, data: T): void {
 }
 
 async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-    const json = await response.json();
-    setLocalCache(cacheKey, json);
-    return json;
-  } catch (err) {
-    const cached = getLocalCache<T>(cacheKey);
-    if (cached) {
-      console.warn(`[API] Network offline or request failed. Serving cached fallback for '${cacheKey}'`);
-      return cached;
-    }
-    throw err;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error ${response.status}`);
   }
+  const json = await response.json();
+  setLocalCache(cacheKey, json);
+  return json;
 }
 
 export interface FlowParams {

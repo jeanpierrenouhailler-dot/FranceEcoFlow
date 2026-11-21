@@ -6,62 +6,10 @@ export class JodiConnector implements SourceConnector<EnergyObservation> {
   readonly name = 'Joint Organisations Data Initiative (JODI Oil World Database)';
   readonly provider = 'IEF / IEA / OPEC / Eurostat / OLADE / APEC / UNSD / GECF';
   readonly type = 'file';
-  readonly description = 'Statistiques énergétiques mondiales : entrées en raffinerie, niveaux des stocks stratégiques (jours de couverture d’importations nettes) et production.';
+  readonly description = 'Source de référence envisagée : statistiques mondiales du pétrole JODI. Extraction live non implémentée.';
   readonly officialUrl = 'https://www.jodidata.org';
 
-  async fetchRaw(): Promise<any> {
-    // Official JODI Oil format for France (Country FRA, Flow metrics in Thousand Barrels / Day and Kilotonnes)
-    return [
-      {
-        period: '2023',
-        metric: 'REFINERY_INTAKE',
-        volumeKboed: 840.5,
-        volumeTonnes: 41200000,
-      },
-      {
-        period: '2023',
-        metric: 'CLOSING_STOCK',
-        volumeTonnes: 15400000,
-        stockDaysNetImports: 104.2, // > 90 days IEA obligation
-      },
-      {
-        period: '2024',
-        metric: 'REFINERY_INTAKE',
-        volumeKboed: 815.0,
-        volumeTonnes: 39800000,
-      },
-      {
-        period: '2024',
-        metric: 'CLOSING_STOCK',
-        volumeTonnes: 15100000,
-        stockDaysNetImports: 106.5,
-      },
-      {
-        period: '2025',
-        metric: 'REFINERY_INTAKE',
-        volumeKboed: 795.0,
-        volumeTonnes: 38900000,
-      },
-      {
-        period: '2025',
-        metric: 'CLOSING_STOCK',
-        volumeTonnes: 14850000,
-        stockDaysNetImports: 108.1,
-      },
-      {
-        period: '2026',
-        metric: 'REFINERY_INTAKE',
-        volumeKboed: 785.0,
-        volumeTonnes: 38400000,
-      },
-      {
-        period: '2026',
-        metric: 'CLOSING_STOCK',
-        volumeTonnes: 14700000,
-        stockDaysNetImports: 109.0,
-      },
-    ];
-  }
+  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
 
   async parse(raw: any[]): Promise<EnergyObservation[]> {
     return raw.map((item, idx) => ({
@@ -95,14 +43,7 @@ export class JodiConnector implements SourceConnector<EnergyObservation> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> {
-    return {
-      reachable: true,
-      latencyMs: 10,
-      message: 'Connecteur JODI Oil actif : stocks stratégiques et entrées en raffineries intégrés.',
-      lastCheckedAt: new Date().toISOString(),
-    };
-  }
+  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
 
   async run(): Promise<IngestionResult<EnergyObservation>> {
     const start = Date.now();

@@ -11,46 +11,14 @@ export class ComtradeConnector implements SourceConnector<EconomicFlow> {
   readonly name = 'United Nations Comtrade Database';
   readonly provider = 'United Nations Statistics Division (UNSD)';
   readonly type = 'api';
-  readonly description = 'Base de données internationale des Nations Unies sur le commerce mondial des marchandises avec gestion de pagination, cache mémoire et reprise sur erreur (retry).';
+  readonly description = 'Source de référence envisagée : commerce mondial de marchandises. Extraction live non implémentée.';
   readonly officialUrl = 'https://comtradeplus.un.org';
 
   private cache: Map<string, ComtradeCacheEntry> = new Map();
   private readonly CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour cache
   private apiKey: string | undefined = process.env.COMTRADE_API_KEY;
 
-  async fetchRaw(options: { page?: number; pageSize?: number } = {}): Promise<any> {
-    const page = options.page || 1;
-    const pageSize = options.pageSize || 50;
-    const cacheKey = `comtrade_FR_2709_${page}_${pageSize}`;
-
-    const cached = this.cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
-      return cached.data;
-    }
-
-    // Benchmark UN Comtrade dataset for France (Reporter 250/251 = France, Partner codes ISO, Commodity 2709)
-    const rawData = {
-      elapsedTime: '0.12s',
-      count: 10,
-      page,
-      pageSize,
-      data: [
-        { period: 2024, reporterCode: 251, partner2Code: 'US', primaryValue: 5895400000, netWgt: 9259000000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'KZ', primaryValue: 4398500000, netWgt: 7013200000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'NO', primaryValue: 3312400000, netWgt: 5200800000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'SA', primaryValue: 3185400000, netWgt: 5122000000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'NG', primaryValue: 2412500000, netWgt: 3743000000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'IQ', primaryValue: 1785400000, netWgt: 2836800000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'DZ', primaryValue: 1295400000, netWgt: 1970000000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'LY', primaryValue: 1084500000, netWgt: 1654800000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'AZ', primaryValue: 812400000, netWgt: 1260800000 },
-        { period: 2024, reporterCode: 251, partner2Code: 'AO', primaryValue: 395400000, netWgt: 630400000 },
-      ],
-    };
-
-    this.cache.set(cacheKey, { timestamp: Date.now(), data: rawData });
-    return rawData;
-  }
+  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
 
   async parse(raw: any): Promise<EconomicFlow[]> {
     const flows: EconomicFlow[] = [];
@@ -91,16 +59,7 @@ export class ComtradeConnector implements SourceConnector<EconomicFlow> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> {
-    return {
-      reachable: true,
-      latencyMs: 15,
-      message: this.apiKey
-        ? 'UN Comtrade API v1 actif (Clé API d’abonnement configurée, pagination et cache opérationnels).'
-        : 'UN Comtrade API v1 actif en mode miroir public certifié (Clé API facultative, cache mémoire actif).',
-      lastCheckedAt: new Date().toISOString(),
-    };
-  }
+  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
 
   async run(): Promise<IngestionResult<EconomicFlow>> {
     const start = Date.now();

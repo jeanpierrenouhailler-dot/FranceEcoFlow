@@ -38,14 +38,12 @@ export default function App() {
     reporter: 'FR',
     flow: 'import',
     product: 'crude_oil',
-    from: 2015,
-    to: 2026,
     partner: 'all',
   });
 
   // Global Data State
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [flowError, setFlowError] = useState<string | null>(null);
 
   const [countries, setCountries] = useState<Country[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,7 +61,7 @@ export default function App() {
 
   // Load static references once
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       api.getCountries(),
       api.getProducts(),
       api.getInfrastructures(),
@@ -72,17 +70,18 @@ export default function App() {
       api.getAnomalies('crude_oil'),
     ])
       .then(([cRes, pRes, iRes, rRes, sRes, aRes]) => {
-        setCountries(cRes.data);
-        setProducts(pRes.data);
-        setInfrastructures(iRes.data);
-        setRoutes(rRes.data);
-        setSources(sRes.sources);
-        setDatasets(sRes.datasets);
-        setAnomalies(aRes.data);
-      })
-      .catch((err) => {
-        console.error('Failed to load base references:', err);
-        setError('Impossible de charger les métadonnées de base.');
+        if (cRes.status === 'fulfilled') setCountries(cRes.value.data);
+        if (pRes.status === 'fulfilled') setProducts(pRes.value.data);
+        if (iRes.status === 'fulfilled') setInfrastructures(iRes.value.data);
+        if (rRes.status === 'fulfilled') setRoutes(rRes.value.data);
+        if (sRes.status === 'fulfilled') {
+          setSources(sRes.value.sources);
+          setDatasets(sRes.value.datasets);
+        }
+        if (aRes.status === 'fulfilled') setAnomalies(aRes.value.data);
+        [cRes, pRes, iRes, rRes, sRes, aRes].forEach((result) => {
+          if (result.status === 'rejected') console.error('Base reference request failed:', result.reason);
+        });
       });
   }, []);
 
@@ -108,7 +107,7 @@ export default function App() {
       .catch((err) => {
         if (isCancelled) return;
         console.error('Failed to load flow data:', err);
-        setError('Erreur lors du calcul des flux économiques.');
+        setFlowError('Les flux ne sont pas disponibles : aucune donnée dont la provenance est vérifiée n’est publiée.');
         setLoading(false);
       });
 
@@ -122,8 +121,8 @@ export default function App() {
       reporter: 'FR',
       flow: 'import',
       product: 'crude_oil',
-      from: 2015,
-      to: 2026,
+      from: undefined,
+      to: undefined,
       partner: 'all',
     });
   };
@@ -144,20 +143,24 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
-        {loading && !summary ? (
+        {loading && !summary && ['dashboard', 'explorer', 'map', 'countries'].includes(activeTab) ? (
           <div className="h-96 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
             <span className="text-xs font-mono">
-              Consolidation des déclarations douanières DGDDI en cours...
+              Vérification de la disponibilité des flux...
             </span>
           </div>
-        ) : error ? (
-          <div className="p-6 rounded-lg bg-rose-950/40 border border-rose-800 text-rose-300 text-xs">
-            {error}
-          </div>
-        ) : summary && sankey ? (
+        ) : (
           <>
-            {activeTab === 'dashboard' && (
+            {(!summary || !sankey) && ['dashboard', 'explorer', 'map', 'countries'].includes(activeTab) && (
+              <div className="p-6 rounded-lg bg-amber-950/30 border border-amber-800 text-amber-200 text-sm">
+                {flowError || 'Les données de flux ne sont pas disponibles.'}
+                <p className="mt-2 text-xs text-amber-100/80">
+                  Les sources et l’ingestion restent consultables ; les données non vérifiées ne sont pas affichées.
+                </p>
+              </div>
+            )}
+            {summary && sankey && activeTab === 'dashboard' && (
               <DashboardView
                 summary={summary}
                 suppliers={suppliers}
@@ -171,7 +174,7 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'explorer' && (
+            {summary && sankey && activeTab === 'explorer' && (
               <ExplorerView
                 params={params}
                 onUpdateParams={updateParams}
@@ -189,7 +192,7 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'map' && (
+            {summary && sankey && activeTab === 'map' && (
               <div className="space-y-4">
                 <div className="border-b border-slate-800 pb-3">
                   <h2 className="text-xl font-bold text-white">
@@ -210,7 +213,7 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === 'countries' && (
+            {summary && sankey && activeTab === 'countries' && (
               <CountriesDirectory
                 suppliers={suppliers}
                 infrastructures={infrastructures}
@@ -229,7 +232,7 @@ export default function App() {
 
             {activeTab === 'ingestion' && <IngestionAuditView />}
           </>
-        ) : null}
+        )}
       </main>
 
       {/* Export Modal */}
@@ -249,7 +252,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-400">France Economic Flow Explorer</span>
             <span>—</span>
-            <span>Données ouvertes DGDDI, SDES, Eurostat, OpenStreetMap</span>
+            <span>Sources référencées ; données non vérifiées</span>
           </div>
           <div className="flex items-center gap-4 text-[11px] font-mono">
             <button

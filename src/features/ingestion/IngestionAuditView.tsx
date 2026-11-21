@@ -6,6 +6,7 @@ import {
   SourceConnectorMeta,
   InseeIndicator,
   EnergyObservation,
+  Infrastructure,
 } from '../../types/index.ts';
 import { api } from '../../lib/api.ts';
 import {
@@ -36,21 +37,23 @@ export const IngestionAuditView: React.FC = () => {
   const [inseeIndicators, setInseeIndicators] = useState<InseeIndicator[]>([]);
   const [energyObs, setEnergyObs] = useState<EnergyObservation[]>([]);
   const [nomenclaturesCatalog, setNomenclaturesCatalog] = useState<any[]>([]);
-  const [selectedNC8, setSelectedNC8] = useState<string>('27090090');
+  const [selectedNC8, setSelectedNC8] = useState<string>('');
   const [resolvedProductInfo, setResolvedProductInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // Spatial query state
-  const [spatialHub, setSpatialHub] = useState<'fos' | 'havre' | 'donges'>('fos');
+  const [spatialHub, setSpatialHub] = useState('');
   const [spatialRadius, setSpatialRadius] = useState<number>(150);
   const [spatialResults, setSpatialResults] = useState<any[]>([]);
   const [spatialLoading, setSpatialLoading] = useState(false);
+  const [spatialHubs, setSpatialHubs] = useState<Infrastructure[]>([]);
+  const [spatialError, setSpatialError] = useState<string | null>(null);
 
   // Sub-tabs
   const [subTab, setSubTab] = useState<'sources' | 'database' | 'nomenclatures' | 'insee' | 'energy' | 'checks' | 'raw'>('sources');
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       api.getIngestionReport(),
       api.getRawCustomsSample(20),
       api.getDatabaseStatus(),
@@ -59,49 +62,69 @@ export const IngestionAuditView: React.FC = () => {
       api.getInseeIndicators(),
       api.getEnergyObservations(),
       api.getNomenclatures(),
-      api.resolveNC8Product('27090090'),
+      api.getInfrastructures(),
     ])
-      .then(([repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, nc8Res]) => {
-        setReport(repRes.data);
-        setRawSample(sampleRes);
-        setDbStatus(dbRes.data);
-        setConnectors(connRes.data);
-        setSourcesHealth(healthRes.data);
-        setInseeIndicators(inseeRes.data);
-        setEnergyObs(energyRes.data);
-        setNomenclaturesCatalog(nomRes.data);
-        setResolvedProductInfo(nc8Res.data);
+      .then(([repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, infraRes]) => {
+        if (repRes.status === 'fulfilled') setReport(repRes.value.data);
+        if (sampleRes.status === 'fulfilled') setRawSample(sampleRes.value);
+        if (dbRes.status === 'fulfilled') setDbStatus(dbRes.value.data);
+        if (connRes.status === 'fulfilled') setConnectors(connRes.value.data);
+        if (healthRes.status === 'fulfilled') setSourcesHealth(healthRes.value.data);
+        if (inseeRes.status === 'fulfilled') setInseeIndicators(inseeRes.value.data);
+        if (energyRes.status === 'fulfilled') setEnergyObs(energyRes.value.data);
+        if (nomRes.status === 'fulfilled') {
+          setNomenclaturesCatalog(nomRes.value.data);
+          const firstCode = nomRes.value.data[0]?.nc8;
+          if (firstCode) {
+            setSelectedNC8(firstCode);
+            api.resolveNC8Product(firstCode)
+              .then((response) => setResolvedProductInfo(response.data))
+              .catch((error) => console.error('Nomenclature resolution failed:', error));
+          }
+        }
+        if (infraRes.status === 'fulfilled') {
+          setSpatialHubs(infraRes.value.data);
+          setSpatialHub(infraRes.value.data[0]?.id ?? '');
+        }
+        [repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, infraRes]
+          .forEach((result) => {
+            if (result.status === 'rejected') console.error('Audit data request failed:', result.reason);
+          });
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to load audit data:', err);
-        setLoading(false);
-      });
   }, []);
 
   const handleResolveNC8 = (code: string) => {
     setSelectedNC8(code);
-    api.resolveNC8Product(code).then((res) => setResolvedProductInfo(res.data));
+    api.resolveNC8Product(code)
+      .then((res) => setResolvedProductInfo(res.data))
+      .catch((error) => console.error('Nomenclature resolution failed:', error));
   };
 
 
   // Run spatial query when hub or radius changes
   useEffect(() => {
-    const coords: { [key: string]: [number, number] } = {
-      fos: [4.885, 43.433],
-      havre: [0.183, 49.664],
-      donges: [-2.074, 47.306],
-    };
-    const [lng, lat] = coords[spatialHub];
+    const hub = spatialHubs.find((infra) => infra.id === spatialHub);
+    if (!hub) {
+      setSpatialResults([]);
+      setSpatialError(spatialHubs.length === 0 ? 'Aucune infrastructure vérifiée n’est disponible.' : 'Sélectionnez une infrastructure.');
+      setSpatialLoading(false);
+      return;
+    }
+    const [lng, lat] = hub.coordinates;
     setSpatialLoading(true);
+    setSpatialError(null);
     api
       .getSpatialInfrastructuresWithin(lat, lng, spatialRadius)
       .then((res) => {
         setSpatialResults(res.data);
         setSpatialLoading(false);
       })
-      .catch(() => setSpatialLoading(false));
-  }, [spatialHub, spatialRadius]);
+      .catch((error) => {
+        setSpatialError(error instanceof Error ? error.message : 'La requête spatiale a échoué.');
+        setSpatialLoading(false);
+      });
+  }, [spatialHub, spatialRadius, spatialHubs]);
 
   if (loading) {
     return (
@@ -123,7 +146,7 @@ export const IngestionAuditView: React.FC = () => {
           Intégration PostgreSQL/PostGIS & Couche d'Abstraction des Sources
         </h1>
         <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-3xl">
-          Architecture complète conforme au cahier des charges : moteur spatial PostGIS 3.4 pour les géométries et calculs de proximité, et connecteurs modulaires pour les 9 fournisseurs officiels (DGDDI, INSEE, Eurostat, UN Comtrade, JODI Oil, U.S. EIA, SDES, OpenStreetMap/Overpass, IGN Géoservices).
+          Prototype d’intégration. Les données des connecteurs et les infrastructures restent indisponibles tant que leur extraction, leur persistance et leur provenance ne sont pas vérifiées.
         </p>
 
         {/* Sub-navigation bar */}
@@ -137,7 +160,7 @@ export const IngestionAuditView: React.FC = () => {
             }`}
           >
             <Radio className="w-3.5 h-3.5" />
-            <span>9 Connecteurs Sources</span>
+            <span>Sources référencées</span>
           </button>
 
           <button
@@ -223,8 +246,8 @@ export const IngestionAuditView: React.FC = () => {
               <Radio className="w-4 h-4 text-cyan-400" />
               <span>Couche d'Abstraction des Sources (`server/ingestion/sources/*`)</span>
             </h2>
-            <span className="text-xs font-mono text-emerald-400">
-              9 / 9 connecteurs opérationnels
+            <span className="text-xs font-mono text-amber-400">
+              {Object.values(sourcesHealth).filter((health: any) => health?.reachable).length} / {connectors.length} sources accessibles
             </span>
           </div>
 
@@ -252,9 +275,9 @@ export const IngestionAuditView: React.FC = () => {
                   <div className="pt-3 border-t border-slate-800/80 space-y-2 text-[11px]">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Santé / Disponibilité</span>
-                      <span className="flex items-center gap-1 font-mono text-emerald-400 font-semibold">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        {health?.reachable ? 'EN LIGNE' : 'MIROIR VÉRIFIÉ'} ({health?.latencyMs || 10} ms)
+                      <span className={`flex items-center gap-1 font-mono font-semibold ${health?.reachable ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        <span className={`w-2 h-2 rounded-full ${health?.reachable ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        {health?.reachable ? `EN LIGNE (${health.latencyMs} ms)` : health?.status || 'ÉTAT INCONNU'}
                       </span>
                     </div>
 
@@ -264,7 +287,7 @@ export const IngestionAuditView: React.FC = () => {
                       rel="noopener noreferrer"
                       className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 text-[11px] pt-1"
                     >
-                      <span>Portail officiel</span>
+                      <span>Portail de référence</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
@@ -286,11 +309,11 @@ export const IngestionAuditView: React.FC = () => {
                   <span>MOTEUR DE STOCKAGE RELATIONNEL & SPATIAL</span>
                 </span>
                 <h3 className="text-lg font-bold text-white mt-1">
-                  PostgreSQL 16 + PostGIS 3.4
+                  {dbStatus?.connected ? dbStatus.version : 'Base de données indisponible'}
                 </h3>
               </div>
-              <div className="px-3 py-1.5 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs font-mono font-bold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <div className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-bold flex items-center gap-2 ${dbStatus?.connected ? 'bg-emerald-950 border-emerald-800 text-emerald-300' : 'bg-amber-950 border-amber-800 text-amber-300'}`}>
+                <span className={`w-2 h-2 rounded-full ${dbStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                 <span>{dbStatus?.engine}</span>
               </div>
             </div>
@@ -299,13 +322,13 @@ export const IngestionAuditView: React.FC = () => {
               <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
                 <span className="text-slate-400 block mb-1">Version PostGIS</span>
                 <span className="font-mono font-bold text-white text-sm">
-                  {dbStatus?.postgisVersion}
+                  {dbStatus?.postgisVersion || 'Non disponible'}
                 </span>
               </div>
               <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
                 <span className="text-slate-400 block mb-1">Index Spatiaux GIST</span>
                 <span className="font-mono font-bold text-emerald-400 text-sm">
-                  GIST(geom) ACTIFS
+                  {dbStatus?.connected ? 'État non vérifié' : 'Base indisponible'}
                 </span>
               </div>
               <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
@@ -333,12 +356,12 @@ export const IngestionAuditView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <select
                   value={spatialHub}
-                  onChange={(e) => setSpatialHub(e.target.value as any)}
+                  onChange={(e) => setSpatialHub(e.target.value)}
+                  disabled={spatialHubs.length === 0}
                   className="bg-slate-950 border border-slate-700 text-xs rounded px-2.5 py-1.5 text-white"
                 >
-                  <option value="fos">Fos-sur-Mer / Lavéra (Méditerranée)</option>
-                  <option value="havre">Le Havre - Antifer (Manche / Seine)</option>
-                  <option value="donges">Donges (Façade Atlantique)</option>
+                  {spatialHubs.length === 0 && <option value="">Aucune infrastructure vérifiée</option>}
+                  {spatialHubs.map((hub) => <option key={hub.id} value={hub.id}>{hub.name}</option>)}
                 </select>
 
                 <select
@@ -375,7 +398,7 @@ export const IngestionAuditView: React.FC = () => {
                   ) : spatialResults.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-4 text-center text-slate-500">
-                        Aucune infrastructure dans ce périmètre.
+                        {spatialError || 'Aucune infrastructure dans ce périmètre.'}
                       </td>
                     </tr>
                   ) : (
@@ -387,12 +410,14 @@ export const IngestionAuditView: React.FC = () => {
                         <td className="py-2 px-3 text-cyan-400 uppercase text-[10px]">
                           {infra.type}
                         </td>
-                        <td className="py-2 px-3 text-slate-400 font-sans">{infra.operator}</td>
+                        <td className="py-2 px-3 text-slate-400 font-sans">{infra.operator || 'Non renseigné'}</td>
                         <td className="py-2 px-3 text-right text-emerald-400 font-bold">
                           {infra.distanceKm} km
                         </td>
                         <td className="py-2 px-3 text-right text-slate-300">
-                          {(infra.capacityAnnualTonnes / 1000000).toFixed(1)} Mt/an
+                          {infra.capacityAnnualTonnes === undefined
+                            ? 'Non renseignée'
+                            : `${(infra.capacityAnnualTonnes / 1000000).toFixed(1)} Mt/an`}
                         </td>
                       </tr>
                     ))
@@ -443,12 +468,11 @@ export const IngestionAuditView: React.FC = () => {
                     onChange={(e) => handleResolveNC8(e.target.value)}
                     className="bg-slate-900 border border-slate-700 text-xs rounded px-2.5 py-1.5 text-white font-mono"
                   >
-                    <option value="27090090">27090090 - Pétrole brut hors condensats</option>
-                    <option value="27090010">27090010 - Condensats de gaz naturel</option>
-                    <option value="27101245">27101245 - Supercarburants sans plomb (Essence)</option>
-                    <option value="27101943">27101943 - Gazole automobile (Diesel)</option>
-                    <option value="27101921">27101921 - Kérosène aviation (Jet Fuel)</option>
-                    <option value="27111100">27111100 - Gaz naturel liquéfié (GNL)</option>
+                    {nomenclaturesCatalog.map((item) => (
+                      <option key={item.nc8} value={item.nc8}>
+                        {item.nc8} - {item.descriptionFr}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -485,7 +509,7 @@ export const IngestionAuditView: React.FC = () => {
                       {resolvedProductInfo.confidence}
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      Catalogue officiel DGDDI
+                      Catalogue DGDDI (référence)
                     </span>
                   </div>
                 </div>

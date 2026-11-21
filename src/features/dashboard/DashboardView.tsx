@@ -30,15 +30,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="border border-slate-800 rounded-xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 p-6 sm:p-8">
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 mb-2">
-            <span>OBSERVATOIRE DU COMMERCE EXTÉRIEUR DE LA FRANCE</span>
+            <span>PROTOTYPE · DONNÉES NON VÉRIFIÉES</span>
             <span>·</span>
-            <span>DONNÉES OFFICIELLES DGDDI</span>
+            <span>SOURCES À AUTHENTIFIER</span>
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
             Exploration des flux économiques et approvisionnements stratégiques de la France
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Visualisez et analysez la provenance des flux énergétiques français, l’évolution des pays partenaires, les capacités des terminaux portuaires et les routes logistiques réelles.
+            Les flux commerciaux, infrastructures et routes ne sont pas publiés tant que leurs données et leur provenance n’ont pas été vérifiées.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
@@ -46,7 +46,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
             >
               <Compass className="w-4 h-4" />
-              <span>Explorer les flux (Pétrole brut 2015-2026)</span>
+              <span>Explorer les flux</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </button>
             <button
@@ -54,7 +54,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer"
             >
               <Anchor className="w-4 h-4 text-cyan-400" />
-              <span>Carte des infrastructures portuaires</span>
+              <span>Infrastructures portuaires</span>
             </button>
           </div>
         </div>
@@ -115,7 +115,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
           <h3 className="text-sm font-bold text-white">
-            Variations structurelles majeures détectées (2020 - 2026)
+            Variations structurelles détectées
           </h3>
           <span className="text-xs text-slate-500 font-mono ml-auto">
             Algorithme de détection statistique

@@ -1,52 +1,35 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { importRawDGDDIFile } from '../server/ingestion/dgddi/rawImporter.ts';
+import { getLoadedEconomicFlows, runDGDDIImportJob } from '../server/ingestion/dgddi/jobs.ts';
+import { isDatasetVerified } from '../server/data/ingestion/provenance.ts';
 import { normalizeDGDDIRows } from '../server/normalization/dgddiNormalizer.ts';
-import { getLoadedEconomicFlows } from '../server/ingestion/dgddi/jobs.ts';
+import { RawDGDDIRow } from '../server/normalization/types.ts';
 
-describe('DGDDI 3-Tier Pipeline Tests (Raw -> Staging -> Normalization)', () => {
-  test('importRawDGDDIFile loads raw DAU declarations with preserved NC8 codes', () => {
-    const rawResult = importRawDGDDIFile();
-    assert.ok(rawResult.totalLinesRead > 150, `Expected >150 raw declarations, got ${rawResult.totalLinesRead}`);
-    assert.ok(rawResult.checksumSha256.length === 64, 'Checksum must be 64-char hex SHA-256');
-
-    // Verify all rows have raw NC8 code 27090090
-    for (const r of rawResult.rows) {
-      assert.ok(r.code_nc8 === '27090090' || r.code_nc8 === '27090010', `Unexpected NC code ${r.code_nc8}`);
-      assert.ok(r.valeur_caf_euros > 0, 'Value must be positive');
-      assert.ok(r.masse_nette_kg > 0, 'Mass must be positive');
-    }
+describe('DGDDI provenance gate and normalization', () => {
+  test('Bundled DAU file stays quarantined and cannot be ingested', async () => {
+    assert.equal(isDatasetVerified('server/ingestion/raw/dgddi_dau_2015_2026.csv'), false);
+    assert.deepEqual(getLoadedEconomicFlows(), []);
+    await assert.rejects(runDGDDIImportJob(), /provenance is unverified/);
   });
 
-  test('normalizeDGDDIRows preserves raw NC8 code and calculates strict accounting implicit price', () => {
-    const rawResult = importRawDGDDIFile();
-    const { flows, report } = normalizeDGDDIRows(rawResult.rows);
+  test('Normalizer derives a unit price from a single explicit fixture', () => {
+    const fixture: RawDGDDIRow = {
+      annee: 2024,
+      mois: 1,
+      flux: '1',
+      pays_declarant: 'FR',
+      pays_partenaire: 'US',
+      code_nc8: '27090090',
+      valeur_caf_euros: 2000,
+      masse_nette_kg: 1000,
+      dau_reference: 'TEST-FIXTURE',
+      source: 'test fixture only',
+    };
+    const { flows, report } = normalizeDGDDIRows([fixture]);
 
-    assert.equal(report.rejectedRows, 0, 'No authentic rows should be rejected');
-    assert.equal(flows.length, rawResult.rows.length);
-
-    for (const flow of flows) {
-      assert.ok(flow.rawNcCode, `Flow ${flow.id} must have rawNcCode`);
-      assert.ok(flow.rawNcDescription, `Flow ${flow.id} must have rawNcDescription`);
-      const expectedImplicit = Math.round((flow.valueEur / flow.quantityTonnes) * 100) / 100;
-      assert.equal(
-        flow.implicitPriceEurPerTonne,
-        expectedImplicit,
-        `Implicit price mismatch on flow ${flow.id}`
-      );
-    }
-  });
-
-  test('Monthly records are authentic individual customs declarations', () => {
-    const flows = getLoadedEconomicFlows();
-    const monthlyFlows = flows.filter((f) => f.periodMonth !== undefined);
-
-    assert.ok(monthlyFlows.length >= 100, `Expected >= 100 monthly declarations, got ${monthlyFlows.length}`);
-
-    // Verify each monthly record has a specific month 1-12 and authentic DAU reference
-    for (const mf of monthlyFlows) {
-      assert.ok(mf.periodMonth! >= 1 && mf.periodMonth! <= 12);
-      assert.ok(mf.dauReference, `Monthly flow ${mf.id} must have dauReference`);
-    }
+    assert.equal(report.rejectedRows, 0);
+    assert.equal(flows.length, 1);
+    assert.equal(flows[0].quantityTonnes, 1);
+    assert.equal(flows[0].implicitPriceEurPerTonne, 2000);
   });
 });

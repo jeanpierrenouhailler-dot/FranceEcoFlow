@@ -2,7 +2,8 @@
  * Economic calculation utilities and formatting functions
  */
 
-export function formatTonnes(tonnes: number, locale: string = 'fr-FR'): string {
+export function formatTonnes(tonnes: number | undefined, locale: string = 'fr-FR'): string {
+  if (tonnes === undefined || !Number.isFinite(tonnes)) return 'Non renseignée';
   if (tonnes >= 1000000) {
     const mt = tonnes / 1000000;
     return `${mt.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 2 })} Mt`;

@@ -9,8 +9,8 @@ export function useUrlParams(defaultParams: FlowParams) {
       reporter: search.get('reporter') || defaultParams.reporter || 'FR',
       flow: (search.get('flow') as 'import' | 'export') || defaultParams.flow || 'import',
       product: search.get('product') || defaultParams.product || 'crude_oil',
-      from: search.get('from') ? parseInt(search.get('from')!, 10) : defaultParams.from || 2015,
-      to: search.get('to') ? parseInt(search.get('to')!, 10) : defaultParams.to || 2026,
+      from: search.get('from') ? parseInt(search.get('from')!, 10) : defaultParams.from,
+      to: search.get('to') ? parseInt(search.get('to')!, 10) : defaultParams.to,
       partner: search.get('partner') || defaultParams.partner || 'all',
     };
   };

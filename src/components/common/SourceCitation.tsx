@@ -12,7 +12,7 @@ interface SourceCitationProps {
 export const SourceCitation: React.FC<SourceCitationProps> = ({
   sourceId = 'dgddi',
   datasetName = 'Statistiques du commerce extérieur de la France',
-  period = '2015 - 2026',
+  period = 'Période non vérifiée',
   notes,
   className = '',
 }) => {
@@ -26,28 +26,28 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({
       name: 'Direction Générale des Douanes et Droits Indirects',
       org: 'Ministère de l’Économie, des Finances et de la Souveraineté Industrielle et Numérique',
       url: 'https://lekiosque.finances.gouv.fr',
-      license: 'Licence Ouverte 2.0 (Etalab)',
+      license: 'À vérifier pour le jeu de données utilisé',
       methodologyUrl: 'https://lekiosque.finances.gouv.fr/site_fr/methodologie/index.asp',
     },
     sdes: {
       name: 'SDES (Service des Données et Études Statistiques)',
       org: 'Ministère de la Transition Écologique et de la Cohésion des Territoires',
       url: 'https://www.statistiques.developpement-durable.gouv.fr',
-      license: 'Licence Ouverte 2.0',
+      license: 'À vérifier pour le jeu de données utilisé',
       methodologyUrl: 'https://www.statistiques.developpement-durable.gouv.fr',
     },
     eurostat: {
       name: 'Eurostat / Comext DS-045409',
       org: 'Commission Européenne',
       url: 'https://ec.europa.eu/eurostat',
-      license: 'CC BY 4.0',
+      license: 'À vérifier pour le jeu de données utilisé',
       methodologyUrl: 'https://ec.europa.eu/eurostat/cache/metadata/en/ext_go_esms.htm',
     },
     osm: {
       name: 'OpenStreetMap Contributors',
       org: 'OSM Foundation & Overpass API',
       url: 'https://www.openstreetmap.org',
-      license: 'ODbL 1.0',
+      license: 'À vérifier pour le jeu de données utilisé',
       methodologyUrl: 'https://wiki.openstreetmap.org',
     },
   };

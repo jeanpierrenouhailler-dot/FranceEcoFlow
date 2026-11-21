@@ -18,46 +18,10 @@ export class IgnConnector implements SourceConnector<CartoLayer> {
   readonly name = 'Institut National de l’Information Géographique et Forestière (IGN)';
   readonly provider = 'IGN Géoplateforme (data.geopf.fr)';
   readonly type = 'wmts';
-  readonly description = 'Services cartographiques souverains : limites des eaux territoriales, Zone Économique Exclusive (ZEE), découpage administratif et orthophotographies.';
+  readonly description = 'Source géographique de référence envisagée : services cartographiques IGN. Extraction live non implémentée.';
   readonly officialUrl = 'https://geoservices.ign.fr';
 
-  async fetchRaw(): Promise<any> {
-    return [
-      {
-        id: 'ign_zee_france',
-        name: 'Zone Économique Exclusive (ZEE) et Délimitation Maritime Française',
-        type: 'VectorTile',
-        serviceUrl: 'https://data.geopf.fr/wmts',
-        layerName: 'LIMITES_MARITIMES.FRANCE',
-        format: 'image/png',
-        attribution: 'IGN / Shom — Délimitations Maritimes Françaises',
-        bbox: [-5.5, 41.0, 9.5, 51.5],
-        descriptionFr: 'Espaces maritimes sous juridiction française (mer territoriale 12 milles, zone contiguë 24 milles et ZEE 200 milles nautiques).',
-      },
-      {
-        id: 'ign_plan_v2',
-        name: 'Plan IGN Standard (Géoplateforme)',
-        type: 'WMTS',
-        serviceUrl: 'https://data.geopf.fr/wmts',
-        layerName: 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',
-        format: 'image/png',
-        attribution: 'IGN — Plan IGN V2',
-        bbox: [-5.5, 41.0, 9.5, 51.5],
-        descriptionFr: 'Fond de carte national souverain multi-échelles adapté à la visualisation des emprises logistiques et industrielles.',
-      },
-      {
-        id: 'ign_bd_topo_hydro',
-        name: 'BD TOPO — Hydrographie et Façades Portuaires',
-        type: 'WMS',
-        serviceUrl: 'https://data.geopf.fr/wms-r',
-        layerName: 'BDTOPO_HYDROGRAPHIE.LITTORAL',
-        format: 'image/png',
-        attribution: 'IGN — BD TOPO',
-        bbox: [-5.5, 41.0, 9.5, 51.5],
-        descriptionFr: 'Trait de côte haute précision et quais portuaires d’accostage pétrolier.',
-      },
-    ];
-  }
+  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
 
   async parse(raw: any[]): Promise<CartoLayer[]> {
     return raw.map((layer) => ({
@@ -87,14 +51,7 @@ export class IgnConnector implements SourceConnector<CartoLayer> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> {
-    return {
-      reachable: true,
-      latencyMs: 11,
-      message: 'Services IGN Géoplateforme opérationnels (Flux WMTS/WMS délimitations maritimes et traits de côte).',
-      lastCheckedAt: new Date().toISOString(),
-    };
-  }
+  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
 
   async run(): Promise<IngestionResult<CartoLayer>> {
     const start = Date.now();

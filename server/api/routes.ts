@@ -5,8 +5,6 @@ import {
   countries,
   products,
   productCategories,
-  infrastructures,
-  transportRoutes,
   filterFlows,
   calculateFlowSummary,
   getSupplierRankings,
@@ -24,6 +22,7 @@ import { getDatabaseStatus } from '../db/connection.ts';
 import { dbRepository } from '../db/repository.ts';
 import { sourceRegistry } from '../ingestion/sources/index.ts';
 import { resolveProductFromNC8, getSupportedNomenclatures } from '../normalization/products.ts';
+import { isDatasetVerified } from '../data/ingestion/provenance.ts';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,16 +37,28 @@ function extractFilters(req: Request): FlowQueryFilter {
     reporterCountryId: (req.query.reporter as string) || 'FR',
     flowType: (req.query.flow as 'import' | 'export') || 'import',
     productId: (req.query.product as string) || 'crude_oil',
-    startYear: req.query.from ? parseInt(req.query.from as string, 10) : 2015,
-    endYear: req.query.to ? parseInt(req.query.to as string, 10) : 2026,
+    startYear: req.query.from ? parseInt(req.query.from as string, 10) : undefined,
+    endYear: req.query.to ? parseInt(req.query.to as string, 10) : undefined,
     partnerCountryId: (req.query.partner as string) || undefined,
     periodType: (req.query.periodType as 'annual' | 'monthly') || 'annual',
   };
 }
 
+function requireVerifiedFlowData(res: Response): boolean {
+  const report = getIngestionReport();
+  if (report.overallStatus === 'PASSED' && report.totalRecordsLoaded > 0) return true;
+  res.status(503).json({
+    error: 'No provenance-verified trade-flow dataset is available.',
+    status: 'NOT_AVAILABLE',
+    ingestionReport: report,
+  });
+  return false;
+}
+
 // 1. GET /api/flows
 router.get('/flows', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
     const flows = filterFlows(filters);
     res.json({
@@ -63,6 +74,7 @@ router.get('/flows', (req: Request, res: Response) => {
 // 2. GET /api/flows/summary
 router.get('/flows/summary', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
     const summary = calculateFlowSummary(filters);
     res.json({
@@ -77,6 +89,7 @@ router.get('/flows/summary', (req: Request, res: Response) => {
 // 3. GET /api/flows/timeseries
 router.get('/flows/timeseries', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
     const timeseries = getTimeseriesData(filters);
     res.json({
@@ -91,6 +104,7 @@ router.get('/flows/timeseries', (req: Request, res: Response) => {
 // 4. GET /api/flows/partners
 router.get('/flows/partners', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
     const partners = getSupplierRankings(filters);
     res.json({
@@ -106,6 +120,7 @@ router.get('/flows/partners', (req: Request, res: Response) => {
 // 5. GET /api/flows/sankey
 router.get('/flows/sankey', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
     const sankey = getSankeyData(filters);
     res.json({
@@ -120,6 +135,7 @@ router.get('/flows/sankey', (req: Request, res: Response) => {
 // 6. GET /api/flows/anomalies
 router.get('/flows/anomalies', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const productId = (req.query.product as string) || 'crude_oil';
     const anomalies = detectAnomalies(productId);
     res.json({
@@ -136,27 +152,31 @@ router.get('/countries', (_req: Request, res: Response) => {
   res.json({ count: countries.length, data: countries });
 });
 
-router.get('/countries/:id', (req: Request, res: Response) => {
-  const country = countries.find((c) => c.id.toUpperCase() === req.params.id.toUpperCase());
-  if (!country) {
-    return res.status(404).json({ error: `Country '${req.params.id}' not found` });
+router.get('/countries/:id', async (req: Request, res: Response) => {
+  if (!requireVerifiedFlowData(res)) return;
+  try {
+    const country = countries.find((c) => c.id.toUpperCase() === req.params.id.toUpperCase());
+    if (!country) {
+      return res.status(404).json({ error: `Country '${req.params.id}' not found` });
+    }
+
+    const flows = filterFlows({ partnerCountryId: country.id, periodType: 'annual' });
+    const partnerRankings = getSupplierRankings({ partnerCountryId: country.id });
+    const summary = calculateFlowSummary({ partnerCountryId: country.id });
+    const timeseries = getTimeseriesData({ partnerCountryId: country.id });
+    const relatedRoutes = (await dbRepository.findTransportRoutes()).filter((r) => r.sourcePartnerId === country.id);
+
+    res.json({
+      country,
+      summary,
+      partnerRankings,
+      timeseries,
+      flows,
+      transportRoutes: relatedRoutes,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve country data', details: String(error) });
   }
-
-  // Country specific flows with France
-  const flows = filterFlows({ partnerCountryId: country.id, periodType: 'annual' });
-  const partnerRankings = getSupplierRankings({ partnerCountryId: country.id });
-  const summary = calculateFlowSummary({ partnerCountryId: country.id });
-  const timeseries = getTimeseriesData({ partnerCountryId: country.id });
-  const relatedRoutes = transportRoutes.filter((r) => r.sourcePartnerId === country.id);
-
-  res.json({
-    country,
-    summary,
-    partnerRankings,
-    timeseries,
-    flows,
-    transportRoutes: relatedRoutes,
-  });
 });
 
 // 8. GET /api/products
@@ -170,7 +190,10 @@ router.get('/products', (_req: Request, res: Response) => {
 
 // GET /api/products/resolve-nc8 (Automated DGDDI NC8 -> Product normalizer)
 router.get('/products/resolve-nc8', (req: Request, res: Response) => {
-  const code = (req.query.code as string) || '27090090';
+  const code = req.query.code as string;
+  if (!code) {
+    return res.status(400).json({ error: 'A nomenclature code is required.' });
+  }
   const resolution = resolveProductFromNC8(code);
   res.json({ data: resolution });
 });
@@ -182,7 +205,7 @@ router.get('/products/nomenclatures', (_req: Request, res: Response) => {
 });
 
 router.get('/products/:id', (req: Request, res: Response) => {
-
+  if (!requireVerifiedFlowData(res)) return;
   const product = products.find((p) => p.id === req.params.id);
   if (!product) {
     return res.status(404).json({ error: `Product '${req.params.id}' not found` });
@@ -200,31 +223,40 @@ router.get('/products/:id', (req: Request, res: Response) => {
 });
 
 // 9. GET /api/infrastructures
-router.get('/infrastructures', (req: Request, res: Response) => {
-  const type = req.query.type as string;
-  let list = infrastructures;
-  if (type) {
-    list = list.filter((i) => i.type === type);
+router.get('/infrastructures', async (req: Request, res: Response) => {
+  try {
+    const type = req.query.type as string | undefined;
+    const list = await dbRepository.findInfrastructures(type);
+    res.json({ count: list.length, data: list });
+  } catch (error) {
+    res.status(503).json({ error: 'Infrastructure database is unavailable', details: String(error) });
   }
-  res.json({ count: list.length, data: list });
 });
 
-router.get('/infrastructures/:id', (req: Request, res: Response) => {
-  const item = infrastructures.find((i) => i.id === req.params.id);
-  if (!item) {
-    return res.status(404).json({ error: `Infrastructure '${req.params.id}' not found` });
+router.get('/infrastructures/:id', async (req: Request, res: Response) => {
+  try {
+    const item = await dbRepository.findInfrastructureById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ error: `Infrastructure '${req.params.id}' not found` });
+    }
+    res.json({ data: item });
+  } catch (error) {
+    res.status(503).json({ error: 'Infrastructure database is unavailable', details: String(error) });
   }
-  res.json({ data: item });
 });
 
 // 10. GET /api/transport-routes
-router.get('/transport-routes', (req: Request, res: Response) => {
-  const partner = req.query.partner as string;
-  let routes = transportRoutes;
-  if (partner && partner !== 'all') {
-    routes = routes.filter((r) => r.sourcePartnerId === partner);
+router.get('/transport-routes', async (req: Request, res: Response) => {
+  try {
+    const partner = req.query.partner as string;
+    const allRoutes = await dbRepository.findTransportRoutes();
+    const routes = partner && partner !== 'all'
+      ? allRoutes.filter((route) => route.sourcePartnerId === partner)
+      : allRoutes;
+    res.json({ count: routes.length, data: routes });
+  } catch (error) {
+    res.status(503).json({ error: 'Transport route database is unavailable', details: String(error) });
   }
-  res.json({ count: routes.length, data: routes });
 });
 
 // 11. GET /api/sources
@@ -238,6 +270,7 @@ router.get('/sources', (_req: Request, res: Response) => {
 // 12. GET /api/export
 router.get('/export', (req: Request, res: Response) => {
   try {
+    if (!requireVerifiedFlowData(res)) return;
     const format = (req.query.format as string) || 'json';
     const filters = extractFilters(req);
     const flows = filterFlows(filters);
@@ -276,7 +309,7 @@ router.get('/export', (req: Request, res: Response) => {
     res.json({
       metadata: {
         exportedAt: new Date().toISOString(),
-        title: 'France Economic Flow Explorer — Export officiel',
+        title: 'FranceEcoFlow — export de données',
         filters,
         summary,
       },
@@ -312,6 +345,12 @@ router.get('/ingestion/files', (_req: Request, res: Response) => {
 // 15. GET /api/ingestion/raw-sample
 router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
   try {
+    if (!isDatasetVerified('server/ingestion/raw/dgddi_dau_2015_2026.csv')) {
+      return res.status(409).json({
+        error: 'The bundled DGDDI file is quarantined because its provenance is unverified.',
+        status: 'UNVERIFIED',
+      });
+    }
     const rawDauPath = path.resolve(projectRoot, 'server/ingestion/raw/dgddi_dau_2015_2026.csv');
     if (!fs.existsSync(rawDauPath)) {
       return res.status(404).json({ error: 'Raw DAU dataset not found on disk' });
@@ -357,9 +396,16 @@ router.get('/database/status', (_req: Request, res: Response) => {
 // 17. GET /api/database/spatial/within (PostGIS ST_DWithin query)
 router.get('/database/spatial/within', async (req: Request, res: Response) => {
   try {
-    const lat = parseFloat((req.query.lat as string) || '43.433'); // default Fos-sur-Mer
-    const lng = parseFloat((req.query.lng as string) || '4.885');
-    const radiusKm = parseFloat((req.query.radius as string) || '150');
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const radiusKm = Number(req.query.radius);
+    if (
+      !Number.isFinite(lat) || lat < -90 || lat > 90 ||
+      !Number.isFinite(lng) || lng < -180 || lng > 180 ||
+      !Number.isFinite(radiusKm) || radiusKm <= 0 || radiusKm > 20038
+    ) {
+      return res.status(400).json({ error: 'Valid lat, lng, and radius query parameters are required.' });
+    }
 
     const results = await dbRepository.findInfrastructuresWithinRadius(lng, lat, radiusKm);
     res.json({
@@ -394,26 +440,40 @@ router.get('/sources/health', async (_req: Request, res: Response) => {
 
 // 20. GET /api/sources/insee (INSEE Macroeconomic series)
 router.get('/sources/insee', async (req: Request, res: Response) => {
-  const code = req.query.code as string;
-  const indicators = await dbRepository.findInseeIndicators(code);
-  res.json({ count: indicators.length, data: indicators });
+  try {
+    const code = req.query.code as string;
+    const indicators = await dbRepository.findInseeIndicators(code);
+    res.json({ count: indicators.length, data: indicators });
+  } catch (error) {
+    res.status(503).json({ error: 'INSEE observations are unavailable from PostgreSQL.', details: String(error) });
+  }
 });
 
 
 // 21. GET /api/sources/energy (JODI / SDES energy balance observations)
 router.get('/sources/energy', async (req: Request, res: Response) => {
-  const metric = req.query.metric as string;
-  const observations = await dbRepository.findEnergyObservations(metric);
-  res.json({ count: observations.length, data: observations });
+  try {
+    const metric = req.query.metric as string;
+    const observations = await dbRepository.findEnergyObservations(metric);
+    res.json({ count: observations.length, data: observations });
+  } catch (error) {
+    res.status(503).json({ error: 'Energy observations are unavailable from PostgreSQL.', details: String(error) });
+  }
 });
 
 // 22. POST /api/sources/ingest (Trigger on-demand multi-source ingestion)
 router.post('/sources/ingest', async (_req: Request, res: Response) => {
   try {
     const result = await sourceRegistry.runAllIngestions();
-    res.json({
-      success: true,
-      message: `Ingestion completed: ${result.totalRecords} records across 9 sources in ${result.totalDurationMs} ms.`,
+    const failedSources = Object.entries(result.results)
+      .filter(([, ingestion]) => ingestion.status !== 'SUCCESS' && ingestion.status !== 'PARTIAL')
+      .map(([sourceId]) => sourceId);
+    const success = failedSources.length === 0;
+    res.status(success ? 200 : 503).json({
+      success,
+      message: success
+        ? `Ingestion completed: ${result.totalRecords} records in ${result.totalDurationMs} ms.`
+        : `Ingestion unavailable for ${failedSources.length} source(s): ${failedSources.join(', ')}.`,
       data: result,
     });
   } catch (err) {

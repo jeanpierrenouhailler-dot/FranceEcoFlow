@@ -1,0 +1,68 @@
+{
+  "datasets": [
+    {
+      "id": "dgddi-annual-bundled",
+      "path": "data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv",
+      "source": "DGDDI (claim in file)",
+      "officialUrl": "https://lekiosque.finances.gouv.fr",
+      "datasetName": null,
+      "publishedAt": null,
+      "extractedAt": null,
+      "periodStart": null,
+      "periodEnd": null,
+      "license": null,
+      "version": null,
+      "sha256": "6983e1f64e273805d4a508d74ed729ac13d94e12d58981b6f5644dbef4cb3b82",
+      "status": "QUARANTINED",
+      "reason": "The original publication or extraction and the claimed DGDDI provenance have not been independently verified."
+    },
+    {
+      "id": "dgddi-monthly-bundled",
+      "path": "data/raw/dgddi/dgddi_flux_brut_mensuel_2024_2026.csv",
+      "source": "DGDDI (claim in file)",
+      "officialUrl": "https://lekiosque.finances.gouv.fr",
+      "datasetName": null,
+      "publishedAt": null,
+      "extractedAt": null,
+      "periodStart": null,
+      "periodEnd": null,
+      "license": null,
+      "version": null,
+      "sha256": "66daeb99ba9b475b41faa9dd0ea99e99e30632b90770c64cfdbf28e1b56c2969",
+      "status": "QUARANTINED",
+      "reason": "The original publication or extraction and the claimed DGDDI provenance have not been independently verified."
+    },
+    {
+      "id": "dgddi-dau-bundled",
+      "path": "server/ingestion/raw/dgddi_dau_2015_2026.csv",
+      "source": "DGDDI (claim in file)",
+      "officialUrl": "https://lekiosque.finances.gouv.fr",
+      "datasetName": null,
+      "publishedAt": null,
+      "extractedAt": null,
+      "periodStart": null,
+      "periodEnd": null,
+      "license": null,
+      "version": null,
+      "sha256": "a89c12c651b0e4f24075e84550e5614708a3f439e850e3b5893b286796264248",
+      "status": "QUARANTINED",
+      "reason": "The original publication or extraction and the claimed DGDDI provenance have not been independently verified."
+    },
+    {
+      "id": "sdes-ports-bundled",
+      "path": "data/raw/sdes/sdes_receptions_brut_ports.csv",
+      "source": "SDES (claim in file)",
+      "officialUrl": "https://www.statistiques.developpement-durable.gouv.fr",
+      "datasetName": null,
+      "publishedAt": null,
+      "extractedAt": null,
+      "periodStart": null,
+      "periodEnd": null,
+      "license": null,
+      "version": null,
+      "sha256": "46f90169d31f47af5781c59f1530ead1fba01c8d461923b76c11672ece875939",
+      "status": "QUARANTINED",
+      "reason": "The original publication or extraction and the claimed SDES provenance have not been independently verified."
+    }
+  ]
+}

@@ -21,19 +21,19 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
       label: 'Confirmé',
       textClass: 'text-emerald-400',
       icon: <ShieldCheck className="w-3.5 h-3.5 inline mr-1 text-emerald-400" />,
-      tooltip: 'Donnée statistique directement extraite des déclarations douanières officielles (DGDDI / Eurostat).',
+      tooltip: 'À utiliser uniquement lorsque la source primaire et la provenance de cette donnée ont été vérifiées.',
     },
     DOCUMENTED: {
       label: 'Documenté',
       textClass: 'text-cyan-400',
       icon: <FileText className="w-3.5 h-3.5 inline mr-1 text-cyan-400" />,
-      tooltip: 'Itinéraire logistique attesté par des manifestes maritimes, bilans de transport (SDES) ou infrastructures physiques vérifiées.',
+      tooltip: 'À utiliser uniquement lorsqu’une documentation logistique vérifiable étaye cet itinéraire.',
     },
     PROBABLE: {
       label: 'Probable',
       textClass: 'text-amber-400',
       icon: <HelpCircle className="w-3.5 h-3.5 inline mr-1 text-amber-400" />,
-      tooltip: 'Estimation dérivée par modélisation ou croisement statistique indirect.',
+      tooltip: 'Estimation indirecte ; ne constitue pas une observation vérifiée.',
     },
     UNKNOWN: {
       label: 'Non déterminé',

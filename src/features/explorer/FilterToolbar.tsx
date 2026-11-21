@@ -18,8 +18,6 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
   products,
   onReset,
 }) => {
-  const years = Array.from({ length: 12 }, (_, i) => 2015 + i); // 2015 to 2026
-
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-4 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
@@ -101,29 +99,23 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
             <span>Période (Années)</span>
           </label>
           <div className="flex items-center gap-1.5">
-            <select
-              value={params.from || 2015}
-              onChange={(e) => onChange({ from: parseInt(e.target.value, 10) })}
+            <input
+              type="number"
+              value={params.from ?? ''}
+              onChange={(e) => onChange({ from: e.target.value ? Number(e.target.value) : undefined })}
+              aria-label="Première année"
+              placeholder="Début"
               className="w-1/2 bg-slate-950 border border-slate-800 rounded-md px-2 py-1.5 text-slate-100 font-mono text-[11px] focus:border-cyan-500 focus:outline-hidden"
-            >
-              {years.map((y) => (
-                <option key={`from_${y}`} value={y} disabled={y > (params.to || 2026)}>
-                  {y}
-                </option>
-              ))}
-            </select>
+            />
             <span className="text-slate-500">→</span>
-            <select
-              value={params.to || 2026}
-              onChange={(e) => onChange({ to: parseInt(e.target.value, 10) })}
+            <input
+              type="number"
+              value={params.to ?? ''}
+              onChange={(e) => onChange({ to: e.target.value ? Number(e.target.value) : undefined })}
+              aria-label="Dernière année"
+              placeholder="Fin"
               className="w-1/2 bg-slate-950 border border-slate-800 rounded-md px-2 py-1.5 text-slate-100 font-mono text-[11px] focus:border-cyan-500 focus:outline-hidden"
-            >
-              {years.map((y) => (
-                <option key={`to_${y}`} value={y} disabled={y < (params.from || 2015)}>
-                  {y}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 

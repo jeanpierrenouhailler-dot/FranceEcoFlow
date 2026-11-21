@@ -37,12 +37,12 @@ CREATE TABLE IF NOT EXISTS infrastructures (
     name VARCHAR(200) NOT NULL,
     type VARCHAR(50) NOT NULL CHECK (type IN ('port', 'refinery', 'terminal', 'pipeline', 'storage')),
     country_id VARCHAR(10) REFERENCES countries(id),
-    operator VARCHAR(150) NOT NULL,
+    operator VARCHAR(150),
     geom GEOMETRY(Geometry, 4326) NOT NULL,   -- Point (terminal/port) or LineString (pipeline)
-    capacity_annual_tonnes NUMERIC(15, 2) NOT NULL,
-    current_status VARCHAR(50) NOT NULL DEFAULT 'active',
+    capacity_annual_tonnes NUMERIC(15, 2),
+    current_status VARCHAR(50) NOT NULL DEFAULT 'unknown',
     osm_id VARCHAR(100),                      -- OpenStreetMap OSM ID ('relation/1145623', etc.)
-    confidence VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED',
+    confidence VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN',
     source_id VARCHAR(50) NOT NULL DEFAULT 'osm',
     description_fr TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS transport_routes (
     mode VARCHAR(50) NOT NULL CHECK (mode IN ('maritime', 'pipeline', 'rail', 'river')),
     geom GEOMETRY(LineString, 4326) NOT NULL, -- Nautical trajectory LineString
     distance_km NUMERIC(10, 2),
-    confidence VARCHAR(20) NOT NULL DEFAULT 'DOCUMENTED',
+    confidence VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN',
     evidence TEXT,
     source_id VARCHAR(50) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS economic_flows (
     value_eur NUMERIC(18, 2) NOT NULL CHECK (value_eur > 0),
     quantity_tonnes NUMERIC(15, 3) NOT NULL CHECK (quantity_tonnes > 0),
     implicit_price_eur_tonne NUMERIC(12, 2) GENERATED ALWAYS AS (ROUND((value_eur / quantity_tonnes), 2)) STORED,
-    confidence VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED',
+    confidence VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN',
     source_id VARCHAR(50) NOT NULL,
     dataset_id VARCHAR(100) NOT NULL,
     raw_nc_code VARCHAR(20),                  -- Preserved original NC8 code (e.g. '27090090')

@@ -36,7 +36,7 @@ export const CountriesDirectory: React.FC<CountriesDirectoryProps> = ({
             <span>Répertoire des pays partenaires commerciaux</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Données bilatérales consolidées avec la France pour le pétrole brut (2015-2026).
+            Les partenaires ne sont affichés qu’à partir de flux vérifiés.
           </p>
         </div>
 

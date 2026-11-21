@@ -40,6 +40,16 @@ class SourceRegistry {
   async checkAllConnectorsHealth(): Promise<{ [sourceId: string]: ConnectorHealth }> {
     const results: { [sourceId: string]: ConnectorHealth } = {};
     for (const [id, connector] of this.connectors.entries()) {
+      if (connector.liveExtractionImplemented !== true) {
+        results[id] = {
+          reachable: false,
+          latencyMs: 0,
+          message: 'Aucune extraction réelle implémentée; la source n’a pas été interrogée.',
+          lastCheckedAt: new Date().toISOString(),
+          status: 'NOT_AVAILABLE',
+        };
+        continue;
+      }
       try {
         results[id] = await connector.healthCheck();
       } catch (err: any) {
@@ -64,22 +74,35 @@ class SourceRegistry {
     let totalRecords = 0;
 
     for (const [id, connector] of this.connectors.entries()) {
+      if (connector.liveExtractionImplemented !== true) {
+        results[id] = {
+          sourceId: id,
+          status: 'NOT_AVAILABLE',
+          recordsCount: 0,
+          durationMs: 0,
+          records: [],
+          warnings: ['Live extraction is not implemented; synthetic connector data is disabled.'],
+        };
+        continue;
+      }
       try {
         const res = await connector.run();
-        results[id] = res;
-        totalRecords += res.recordsCount;
 
         // Populate database repository with multi-source records
         if (id === 'insee') {
           await dbRepository.saveInseeIndicators(res.records);
         } else if (id === 'jodi' || id === 'sdes') {
           await dbRepository.saveEnergyObservations(res.records);
-        } else if (id === 'osm') {
-          dbRepository.setMemoryInfrastructures(res.records);
         }
+        results[id] = {
+          ...res,
+          status: res.status ?? (res.recordsCount > 0 ? 'SUCCESS' : 'PARTIAL'),
+        };
+        totalRecords += res.recordsCount;
       } catch (err: any) {
         results[id] = {
           sourceId: id,
+          status: 'NOT_AVAILABLE',
           recordsCount: 0,
           durationMs: 0,
           records: [],

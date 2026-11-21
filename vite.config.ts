@@ -16,7 +16,7 @@ export default defineConfig(() => {
           id: '/',
           name: 'France Economic Flow Explorer',
           short_name: 'FlowExplorer',
-          description: "Explore France's economic, trade and energy flows: imports, exports, partner countries, port infrastructures, and verified supply data.",
+          description: 'Exploration des flux économiques français ; jeux de données encore non vérifiés.',
           theme_color: '#0b1120',
           background_color: '#0b1120',
           display: 'standalone',
@@ -46,20 +46,6 @@ export default defineConfig(() => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           runtimeCaching: [
-            {
-              urlPattern: /^\/api\/.*/i,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'api-cache',
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',

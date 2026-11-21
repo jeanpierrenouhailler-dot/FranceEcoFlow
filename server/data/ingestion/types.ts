@@ -18,8 +18,10 @@ export interface IngestedFileMetadata {
   fileSizeBytes: number;
   sha256Hash: string;
   recordCount: number;
-  ingestedAt: string;
+  ingestedAt?: string;
   sourceProvider: string;
+  provenanceStatus?: 'VERIFIED' | 'UNVERIFIED' | 'QUARANTINED';
+  provenanceReason?: string;
 }
 
 export interface QualityCheckResult {
@@ -41,6 +43,7 @@ export interface IngestionAuditReport {
   annualRecordsLoaded: number;
   monthlyRecordsLoaded: number;
   filesIngested: IngestedFileMetadata[];
+  filesQuarantined?: IngestedFileMetadata[];
   checks: QualityCheckResult[];
   overallStatus: 'PASSED' | 'WARNING' | 'FAILED';
 }

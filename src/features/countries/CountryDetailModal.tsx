@@ -81,7 +81,7 @@ export const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
               <MetricCard
                 label="Volume cumulé importé"
                 value={formatTonnes(data.summary.totalQuantityTonnes)}
-                subtext={`2015 — 2026`}
+                subtext={data.summary.periodLabel}
                 sourceLabel="DGDDI"
                 highlight
               />
@@ -102,7 +102,7 @@ export const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
             {/* Timeseries Evolution */}
             <div className="space-y-2">
               <h3 className="text-xs font-semibold text-slate-300">
-                Évolution des approvisionnements vers la France (2015 - 2026)
+                Évolution des approvisionnements vers la France
               </h3>
               <TimeseriesChart data={data.timeseries} height="280px" />
             </div>
@@ -158,7 +158,7 @@ export const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
             <SourceCitation
               sourceId="dgddi"
               datasetName={`Statistiques bilatérales France - ${data.country.nameFr}`}
-              period="2015 - 2026"
+              period={data.summary.periodLabel}
             />
           </div>
         ) : (

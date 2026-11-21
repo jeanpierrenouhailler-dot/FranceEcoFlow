@@ -45,13 +45,13 @@ export const MethodologyView: React.FC = () => {
           <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800 space-y-1.5">
             <span className="font-bold text-emerald-400 font-mono">CONFIRMED (Confirmé)</span>
             <p className="text-slate-300">
-              Donnée directement issue des déclarations douanières officielles obligatoires (DGDDI, Eurostat). Valeurs financières CAF et masses nettes enregistrées aux frontières.
+              Niveau réservé aux données dont la source primaire et la provenance ont été authentifiées. Les fichiers actuellement fournis dans le dépôt sont en quarantaine.
             </p>
           </div>
           <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800 space-y-1.5">
             <span className="font-bold text-cyan-400 font-mono">DOCUMENTED (Documenté)</span>
             <p className="text-slate-300">
-              Itinéraire maritime, portuaire ou par pipeline attesté par des documents publics vérifiables (bilan énergétique SDES, cartes d'infrastructures OpenStreetMap, publications de l'AIE).
+              Niveau réservé aux itinéraires étayés par des documents vérifiables. Aucun itinéraire n’est actuellement publié.
             </p>
           </div>
           <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800 space-y-1.5">
@@ -139,7 +139,7 @@ export const MethodologyView: React.FC = () => {
         </h2>
         <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800 text-xs space-y-2 text-slate-300">
           <p>
-            Avant publication dans l'API, chaque lot de données subit les tests automatisés suivants :
+            Les données sont bloquées tant que la provenance n’est pas vérifiée. Les contrôles automatisés disponibles portent sur la cohérence des valeurs, des prix, des codes pays, des périodes et du lignage des fichiers.
           </p>
           <ul className="list-disc list-inside space-y-1 text-slate-400 text-[11px]">
             <li><strong>Cohérence des unités :</strong> Interdiction stricte de mixer kilogrammes, barils et tonnes sans conversion explicite (facteur d'API standard = 7,33 bbl/tonne).</li>

@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export interface DatabaseStatus {
-  engine: 'PostgreSQL/PostGIS' | 'SpatialMemoryEngine (Fallback)';
+  engine: 'PostgreSQL/PostGIS' | 'Unavailable';
   connected: boolean;
   version: string;
   postgisVersion?: string;
@@ -23,6 +23,8 @@ let pool: pg.Pool | null = null;
 let isRealPostgresConnected = false;
 let queriesCount = 0;
 let lastConnectionError: string | undefined = undefined;
+let actualPostgresVersion: string | undefined;
+let actualPostgisVersion: string | undefined;
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -38,6 +40,7 @@ if (databaseUrl) {
     pool.on('error', (err) => {
       console.warn('[PostgreSQL] Background pool error:', err.message);
       lastConnectionError = err.message;
+      isRealPostgresConnected = false;
     });
   } catch (err: any) {
     console.warn('[PostgreSQL] Failed to initialize pg.Pool:', err.message);
@@ -47,11 +50,19 @@ if (databaseUrl) {
 }
 
 export async function testConnection(): Promise<boolean> {
-  if (!pool) return false;
+  if (!pool) {
+    isRealPostgresConnected = false;
+    lastConnectionError = 'DATABASE_URL is not configured.';
+    return false;
+  }
   try {
     const client = await pool.connect();
     try {
-      const res = await client.query('SELECT version();');
+      const res = await client.query<{ version: string; postgis_version: string }>(
+        'SELECT version(), PostGIS_Full_Version() AS postgis_version;'
+      );
+      actualPostgresVersion = res.rows[0]?.version;
+      actualPostgisVersion = res.rows[0]?.postgis_version;
       isRealPostgresConnected = true;
       lastConnectionError = undefined;
       return true;
@@ -60,6 +71,8 @@ export async function testConnection(): Promise<boolean> {
     }
   } catch (err: any) {
     isRealPostgresConnected = false;
+    actualPostgresVersion = undefined;
+    actualPostgisVersion = undefined;
     lastConnectionError = err.message;
     return false;
   }
@@ -67,31 +80,24 @@ export async function testConnection(): Promise<boolean> {
 
 export async function executeQuery<T extends pg.QueryResultRow = any>(text: string, params?: any[]): Promise<pg.QueryResult<T>> {
   queriesCount++;
-  if (pool && isRealPostgresConnected) {
-    try {
-      return await pool.query<T>(text, params);
-    } catch (err: any) {
-      console.warn('[PostgreSQL] Query execution failed, falling back:', err.message);
-    }
+  if (!pool || !isRealPostgresConnected) {
+    throw new Error(lastConnectionError || 'PostgreSQL/PostGIS is not connected.');
   }
 
-
-  // Graceful query response when no PostgreSQL instance is connected
-  return {
-    rows: [] as T[],
-    command: 'SELECT',
-    rowCount: 0,
-    oid: 0,
-    fields: [],
-  };
+  try {
+    return await pool.query<T>(text, params);
+  } catch (err: any) {
+    lastConnectionError = err.message;
+    throw err;
+  }
 }
 
 export function getDatabaseStatus(): DatabaseStatus {
   return {
-    engine: isRealPostgresConnected ? 'PostgreSQL/PostGIS' : 'SpatialMemoryEngine (Fallback)',
+    engine: isRealPostgresConnected ? 'PostgreSQL/PostGIS' : 'Unavailable',
     connected: isRealPostgresConnected,
-    version: isRealPostgresConnected ? 'PostgreSQL 16.3' : 'Simulated PostGIS 3.4 In-Memory',
-    postgisVersion: isRealPostgresConnected ? '3.4.2' : '3.4.2 (Mocked Spatial Functions: ST_DWithin, ST_AsGeoJSON, ST_MakeLine)',
+    version: actualPostgresVersion || 'unavailable',
+    postgisVersion: actualPostgisVersion,
     poolActiveCount: pool?.totalCount || 0,
     poolIdleCount: pool?.idleCount || 0,
     totalQueriesExecuted: queriesCount,
@@ -107,17 +113,22 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
 
   const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
 
-  if (pool && isRealPostgresConnected) {
-    try {
-      await pool.query(schemaSql);
-      return { success: true, message: 'PostgreSQL PostGIS migrations executed successfully.' };
-    } catch (err: any) {
-      return { success: false, message: `Migration error: ${err.message}` };
-    }
+  if (!pool || !isRealPostgresConnected) {
+    return { success: false, message: lastConnectionError || 'PostgreSQL/PostGIS is not connected.' };
   }
 
-  return {
-    success: true,
-    message: 'Schema validated against PostgreSQL 16 + PostGIS 3.4 specifications (active in SpatialMemoryEngine).',
-  };
+  let client: pg.PoolClient | undefined;
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+    await client.query(schemaSql);
+    await client.query('COMMIT');
+    return { success: true, message: 'PostgreSQL/PostGIS schema applied successfully.' };
+  } catch (err: any) {
+    if (client) await client.query('ROLLBACK').catch(() => undefined);
+    lastConnectionError = err.message;
+    return { success: false, message: `Migration error: ${err.message}` };
+  } finally {
+    client?.release();
+  }
 }

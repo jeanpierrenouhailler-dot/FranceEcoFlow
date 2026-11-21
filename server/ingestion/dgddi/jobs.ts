@@ -2,15 +2,21 @@ import { importRawDGDDIFile, persistRawDGDDIRowsToStaging, RawImportResult } fro
 import { normalizeDGDDIRows } from '../../normalization/dgddiNormalizer.ts';
 import { EconomicFlow } from '../../../src/types/index.ts';
 import { executeQuery } from '../../db/connection.ts';
+import { isDatasetVerified } from '../../data/ingestion/provenance.ts';
 
 let cachedNormalizedFlows: EconomicFlow[] | null = null;
 let lastImportJobMetadata: any = null;
+const rawDatasetPath = 'server/ingestion/raw/dgddi_dau_2015_2026.csv';
 
 export async function runDGDDIImportJob(): Promise<{
   importResult: RawImportResult;
   normalizedFlows: EconomicFlow[];
   report: any;
 }> {
+  if (!isDatasetVerified(rawDatasetPath)) {
+    throw new Error(`DGDDI dataset is quarantined because its provenance is unverified: ${rawDatasetPath}`);
+  }
+
   const startTime = Date.now();
   console.log('[DGDDI Job] Starting raw customs import job...');
 
@@ -27,28 +33,7 @@ export async function runDGDDIImportJob(): Promise<{
   const { flows, report } = normalizeDGDDIRows(importResult.rows);
   console.log(`[DGDDI Job] Normalized ${flows.length} economic flows (0 rejected).`);
 
-  // 4. Add small boundary re-export flow for France
-  for (let yr = 2015; yr <= 2026; yr++) {
-    flows.push({
-      id: `dgddi_reexport_FR_GB_2709_${yr}`,
-      reporterCountryId: 'FR',
-      partnerCountryId: 'GB',
-      productId: 'crude_oil',
-      periodYear: yr,
-      periodMonth: undefined,
-      flowType: 'export',
-      valueEur: Math.round(580000 * 580),
-      quantityTonnes: 580000,
-      implicitPriceEurPerTonne: 580,
-      confidence: 'CONFIRMED',
-      sourceId: 'dgddi',
-      datasetId: 'dgddi_annual_series',
-      rawNcCode: '27090090',
-      rawNcDescription: 'Huiles brutes de pétrole ou de minéraux bitumineux (réexportation transfrontalière)',
-    });
-  }
-
-  // 5. Audit Log in PostgreSQL
+  // 4. Audit Log in PostgreSQL
   const durationMs = Date.now() - startTime;
   const auditSql = `
     INSERT INTO ingestion_audit_logs
@@ -66,8 +51,8 @@ export async function runDGDDIImportJob(): Promise<{
       durationMs,
       JSON.stringify(report),
     ]);
-  } catch {
-    // In-memory fallback
+  } catch (error) {
+    throw new Error('Failed to persist DGDDI ingestion audit log', { cause: error });
   }
 
   cachedNormalizedFlows = flows;
@@ -87,29 +72,10 @@ export async function runDGDDIImportJob(): Promise<{
 }
 
 export function getLoadedEconomicFlows(): EconomicFlow[] {
+  if (!isDatasetVerified(rawDatasetPath)) return [];
   if (!cachedNormalizedFlows) {
     const importRes = importRawDGDDIFile();
     const { flows } = normalizeDGDDIRows(importRes.rows);
-
-    for (let yr = 2015; yr <= 2026; yr++) {
-      flows.push({
-        id: `dgddi_reexport_FR_GB_2709_${yr}`,
-        reporterCountryId: 'FR',
-        partnerCountryId: 'GB',
-        productId: 'crude_oil',
-        periodYear: yr,
-        periodMonth: undefined,
-        flowType: 'export',
-        valueEur: Math.round(580000 * 580),
-        quantityTonnes: 580000,
-        implicitPriceEurPerTonne: 580,
-        confidence: 'CONFIRMED',
-        sourceId: 'dgddi',
-        datasetId: 'dgddi_annual_series',
-        rawNcCode: '27090090',
-        rawNcDescription: 'Huiles brutes de pétrole ou de minéraux bitumineux',
-      });
-    }
     cachedNormalizedFlows = flows;
   }
   return cachedNormalizedFlows;

@@ -18,6 +18,7 @@ RUN bun install --frozen-lockfile --production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/database ./database
 COPY --from=builder /app/server.ts ./server.ts
 
 EXPOSE 3000

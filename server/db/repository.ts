@@ -1,5 +1,6 @@
 import { executeQuery } from './connection.ts';
-import { Infrastructure, TransportRoute } from '../../src/types/index.ts';
+import { EconomicFlow, Infrastructure, TransportRoute } from '../../src/types/index.ts';
+import type { FlowQueryFilter } from '../data/store.ts';
 
 export interface SpatialInfrastructureResult extends Infrastructure {
   distanceKm?: number;
@@ -51,6 +52,70 @@ function mapInfrastructureRow(row: any): SpatialInfrastructureResult {
 }
 
 export const dbRepository = {
+  async findPublishedTradeFlows(filter: FlowQueryFilter): Promise<EconomicFlow[]> {
+    const conditions = [
+      "f.validation_status = 'VALIDATED'",
+      "rf.validation_status = 'VALIDATED'",
+      'f.source_id IS NOT NULL',
+      'f.dataset_id IS NOT NULL',
+      'rf.source_url IS NOT NULL',
+      "btrim(rf.source_url) <> ''",
+      'rf.license IS NOT NULL',
+      "btrim(rf.license) <> ''",
+      'p.source_id = f.source_id',
+      'rf.source_id = f.source_id',
+      'rf.dataset_id = f.dataset_id',
+    ];
+    const params: (string | number)[] = [];
+    const addCondition = (sql: string, value: string | number) => {
+      params.push(value);
+      conditions.push(sql.replace('?', `$${params.length}`));
+    };
+
+    if (filter.reporterCountryId) addCondition('f.reporter_country_id = ?', filter.reporterCountryId);
+    if (filter.flowType) addCondition('f.flow_type = ?', filter.flowType);
+    if (filter.productId) addCondition('f.product_id = ?', filter.productId);
+    if (filter.startYear !== undefined) addCondition('f.period_year >= ?', filter.startYear);
+    if (filter.endYear !== undefined) addCondition('f.period_year <= ?', filter.endYear);
+    if (filter.partnerCountryId && filter.partnerCountryId !== 'all') {
+      addCondition('f.partner_country_id = ?', filter.partnerCountryId);
+    }
+    if (filter.periodType === 'annual') conditions.push('f.period_month IS NULL');
+    if (filter.periodType === 'monthly') conditions.push('f.period_month IS NOT NULL');
+
+    const result = await executeQuery(
+      `SELECT DISTINCT f.id, f.reporter_country_id, f.partner_country_id, f.product_id,
+              f.period_year, f.period_month, f.flow_type, f.value_eur, f.quantity_tonnes,
+              f.implicit_price_eur_per_tonne, f.confidence, f.source_id, f.dataset_id,
+              f.raw_nc_code, f.raw_nc_description, f.dau_reference
+       FROM trade_flows f
+       JOIN data_provenance p ON p.trade_flow_id = f.id
+       JOIN raw_files rf ON rf.id = p.raw_file_id
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY f.period_year, f.period_month, f.partner_country_id, f.id;`,
+      params
+    );
+
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      reporterCountryId: row.reporter_country_id,
+      partnerCountryId: row.partner_country_id,
+      productId: row.product_id,
+      periodYear: row.period_year,
+      periodMonth: row.period_month ?? undefined,
+      flowType: row.flow_type,
+      valueEur: Number(row.value_eur),
+      quantityTonnes: Number(row.quantity_tonnes),
+      implicitPriceEurPerTonne: Number(row.implicit_price_eur_per_tonne),
+      confidence: row.confidence,
+      sourceId: row.source_id,
+      datasetId: row.dataset_id,
+      rawNcCode: row.raw_nc_code ?? undefined,
+      rawNcDescription: row.raw_nc_description ?? undefined,
+      dauReference: row.dau_reference ?? undefined,
+    }));
+  },
+
   async findInfrastructuresWithinRadius(
     centerLng: number,
     centerLat: number,

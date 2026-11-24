@@ -27,7 +27,7 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
       label: 'Documenté',
       textClass: 'text-cyan-400',
       icon: <FileText className="w-3.5 h-3.5 inline mr-1 text-cyan-400" />,
-      tooltip: 'À utiliser uniquement lorsqu’une documentation logistique vérifiable étaye cet itinéraire.',
+      tooltip: 'Information étayée par une documentation vérifiable; cela ne confirme pas à lui seul la qualité de toute l’observation.',
     },
     PROBABLE: {
       label: 'Probable',

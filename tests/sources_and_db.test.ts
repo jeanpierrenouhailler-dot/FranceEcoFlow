@@ -1,8 +1,9 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { sourceRegistry } from '../server/ingestion/sources/index.ts';
+import { sourceRegistry, SourceRegistry } from '../server/ingestion/sources/index.ts';
 import { dbRepository } from '../server/db/repository.ts';
 import { getDatabaseStatus } from '../server/db/connection.ts';
+import { SourceConnector } from '../server/ingestion/sources/types.ts';
 
 describe('Production source and database safeguards', () => {
   test('All 9 source connectors are registered', () => {
@@ -46,5 +47,42 @@ describe('Production source and database safeguards', () => {
       dbRepository.findTransportRoutes(),
       /DATABASE_URL is not configured|PostgreSQL\/PostGIS is not connected/
     );
+  });
+
+  test('An empty extraction is failed rather than a successful partial ingestion', async () => {
+    const registry = new SourceRegistry();
+    const connector: SourceConnector = {
+      id: 'empty-fixture',
+      liveExtractionImplemented: true,
+      name: 'Empty fixture',
+      provider: 'Test',
+      type: 'file',
+      description: 'Test connector',
+      officialUrl: 'https://example.invalid',
+      fetchRaw: async () => [],
+      parse: async () => [],
+      normalize: async (records) => records,
+      validate: async () => ({ valid: true, errors: [] }),
+      healthCheck: async () => ({
+        reachable: true,
+        latencyMs: 1,
+        message: 'Test only',
+        lastCheckedAt: new Date().toISOString(),
+      }),
+      run: async () => ({
+        sourceId: 'empty-fixture',
+        status: 'PARTIAL',
+        recordsCount: 0,
+        durationMs: 1,
+        records: [],
+        warnings: [],
+      }),
+    };
+    registry.register(connector);
+
+    const result = await registry.runAllIngestions();
+
+    assert.equal(result.results['empty-fixture'].status, 'FAILED');
+    assert.equal(result.totalRecords, 0);
   });
 });

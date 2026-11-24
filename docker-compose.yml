@@ -10,6 +10,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to the PostgreSQL service URL}
+      APP_URL: ${APP_URL:-}
+      INGESTION_ADMIN_TOKEN: ${INGESTION_ADMIN_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy

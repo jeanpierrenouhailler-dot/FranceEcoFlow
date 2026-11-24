@@ -10,7 +10,7 @@ import { OverpassConnector } from './overpass/OverpassConnector.ts';
 import { IgnConnector } from './ign/IgnConnector.ts';
 import { dbRepository } from '../../db/repository.ts';
 
-class SourceRegistry {
+export class SourceRegistry {
   private connectors: Map<string, SourceConnector> = new Map();
 
   constructor() {
@@ -53,10 +53,12 @@ class SourceRegistry {
       try {
         results[id] = await connector.healthCheck();
       } catch (err: any) {
+        const errorName = err instanceof Error ? err.name : 'UnknownError';
+        console.error(`[Ingestion] Health check failed for ${id} (${errorName}).`);
         results[id] = {
           reachable: false,
           latencyMs: 0,
-          message: `Health check error: ${err.message}`,
+          message: 'Source health check failed.',
           lastCheckedAt: new Date().toISOString(),
         };
       }
@@ -94,10 +96,10 @@ class SourceRegistry {
         } else if (id === 'jodi' || id === 'sdes') {
           await dbRepository.saveEnergyObservations(res.records);
         }
-        results[id] = {
-          ...res,
-          status: res.status ?? (res.recordsCount > 0 ? 'SUCCESS' : 'PARTIAL'),
-        };
+        const status = res.recordsCount === 0
+          ? 'FAILED'
+          : res.status ?? (res.warnings.length > 0 ? 'PARTIAL' : 'SUCCESS');
+        results[id] = { ...res, status };
         totalRecords += res.recordsCount;
       } catch (err: any) {
         results[id] = {

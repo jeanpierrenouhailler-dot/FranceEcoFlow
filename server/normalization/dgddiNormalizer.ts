@@ -28,6 +28,11 @@ export function normalizeDGDDIRows(rawRows: RawDGDDIRow[]): {
 
     // Dynamic resolution of Product, Category and Nomenclature from raw NC8 code
     const resolvedProduct = resolveProductFromNC8(raw.code_nc8);
+    if (resolvedProduct.productId === 'unknown') {
+      rejected++;
+      errors.push(`Row rejected: unsupported or invalid NC8 code (${raw.code_nc8}).`);
+      continue;
+    }
 
     const flowType = raw.flux === '2' || raw.flux === 'export' ? 'export' : 'import';
     const quantityTonnes = Math.round((raw.masse_nette_kg / 1000) * 1000) / 1000;
@@ -48,7 +53,7 @@ export function normalizeDGDDIRows(rawRows: RawDGDDIRow[]): {
       valueEur: raw.valeur_caf_euros,
       quantityTonnes,
       implicitPriceEurPerTonne,
-      confidence: resolvedProduct.confidence === 'CONFIRMED' ? 'CONFIRMED' : 'DOCUMENTED',
+      confidence: 'UNKNOWN',
       sourceId: 'dgddi',
       datasetId: periodMonth ? 'dgddi_nc8_monthly' : 'dgddi_annual_series',
       rawNcCode: resolvedProduct.nc8Code,

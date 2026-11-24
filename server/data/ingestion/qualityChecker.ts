@@ -126,7 +126,7 @@ export function runDataQualityChecks(
     filesMetadata.length > 0 && filesMetadata.every((file) => file.provenanceStatus === 'VERIFIED');
   let sourcePassed = 0;
   for (const f of flows) {
-    if (filesVerified && f.sourceId === 'dgddi' && f.confidence === 'CONFIRMED') {
+    if (filesVerified && f.sourceId === 'dgddi') {
       sourcePassed++;
     }
   }

@@ -115,7 +115,9 @@ export const FlowMap: React.FC<FlowMapProps> = ({
 
           {/* Trade Flow Arcs (Curved quadratic bezier from supplier centroid to France) */}
           {suppliers.map((s) => {
-            const start = projectCoords(s.country.coordinates[0], s.country.coordinates[1]);
+            if (!s.country.coordinates) return null;
+            const [lng, lat] = s.country.coordinates;
+            const start = projectCoords(lng, lat);
             const isSelected = selectedPartnerId === s.partnerCountryId;
             const isHovered = hoveredSupplier?.partnerCountryId === s.partnerCountryId;
 
@@ -186,7 +188,9 @@ export const FlowMap: React.FC<FlowMapProps> = ({
 
           {/* Partner Nodes */}
           {suppliers.map((s) => {
-            const pt = projectCoords(s.country.coordinates[0], s.country.coordinates[1]);
+            if (!s.country.coordinates) return null;
+            const [lng, lat] = s.country.coordinates;
+            const pt = projectCoords(lng, lat);
             const isSelected = selectedPartnerId === s.partnerCountryId;
             const isHovered = hoveredSupplier?.partnerCountryId === s.partnerCountryId;
             const radius = 1.2 + (s.totalQuantityTonnes / maxVolume) * 1.5;

@@ -10,8 +10,8 @@ export interface ProductResolutionResult {
   hsHeading: string;
   nc8Code: string;
   nc8DescriptionFr: string;
-  statisticalUnit: 't' | 'm3' | 'bbl';
-  confidence: 'CONFIRMED' | 'INFERRED';
+  statisticalUnit: 't' | 'm3' | 'bbl' | 'unknown';
+  classificationConfidence: 'HIGH' | 'MEDIUM' | 'UNKNOWN';
 }
 
 export interface NC8Definition {
@@ -25,10 +25,10 @@ export interface NC8Definition {
 }
 
 /**
- * Registre officiel des Nomenclatures Combinées Douanières (NC8 / SH)
- * Utilisé pour la normalisation automatique des déclarations de la DGDDI.
+ * Catalogue local de correspondances NC8 / SH, non authentifié ni versionné.
+ * Il ne doit pas servir de preuve de provenance d'une observation économique.
  */
-export const OFFICIAL_NC8_CATALOG: Record<string, NC8Definition> = {
+export const LOCAL_NC8_CATALOG: Record<string, NC8Definition> = {
   // --- Hydrocarbures bruts (SH 2709) ---
   '27090090': {
     nc8: '27090090',
@@ -121,9 +121,23 @@ export function validateNC8Code(code: string): boolean {
  */
 export function resolveProductFromNC8(nc8Input: string): ProductResolutionResult {
   const cleanCode = nc8Input.trim().replace(/\s+/g, '');
+  const unknownProduct: ProductResolutionResult = {
+    productId: 'unknown',
+    productName: 'Unknown product',
+    productNameFr: 'Produit non déterminé',
+    categoryId: 'unknown',
+    categoryNameFr: 'Catégorie non déterminée',
+    hsChapter: cleanCode.substring(0, 2),
+    hsHeading: cleanCode.substring(0, 4),
+    nc8Code: cleanCode,
+    nc8DescriptionFr: 'Code produit non reconnu dans le catalogue local.',
+    statisticalUnit: 'unknown',
+    classificationConfidence: 'UNKNOWN',
+  };
+  if (!/^\d{8}$/.test(cleanCode)) return unknownProduct;
 
-  // 1. Recherche exacte dans le catalogue officiel
-  const match = OFFICIAL_NC8_CATALOG[cleanCode];
+  // 1. Recherche exacte dans le catalogue local
+  const match = LOCAL_NC8_CATALOG[cleanCode];
   if (match) {
     const categoryNameFr =
       match.categoryId === 'energy_hydrocarbons'
@@ -157,7 +171,7 @@ export function resolveProductFromNC8(nc8Input: string): ProductResolutionResult
       nc8Code: match.nc8,
       nc8DescriptionFr: match.descriptionFr,
       statisticalUnit: match.unit,
-      confidence: 'CONFIRMED',
+      classificationConfidence: 'HIGH',
     };
   }
 
@@ -175,7 +189,7 @@ export function resolveProductFromNC8(nc8Input: string): ProductResolutionResult
       nc8Code: cleanCode,
       nc8DescriptionFr: 'Huiles brutes de pétrole ou de minéraux bitumineux (dérivation SH 2709)',
       statisticalUnit: 't',
-      confidence: 'INFERRED',
+      classificationConfidence: 'MEDIUM',
     };
   }
 
@@ -191,7 +205,7 @@ export function resolveProductFromNC8(nc8Input: string): ProductResolutionResult
       nc8Code: cleanCode,
       nc8DescriptionFr: 'Produits pétroliers raffinés (dérivation SH 2710)',
       statisticalUnit: 't',
-      confidence: 'INFERRED',
+      classificationConfidence: 'MEDIUM',
     };
   }
 
@@ -207,29 +221,16 @@ export function resolveProductFromNC8(nc8Input: string): ProductResolutionResult
       nc8Code: cleanCode,
       nc8DescriptionFr: 'Gaz de pétrole et autres hydrocarbures gazeux (dérivation SH 2711)',
       statisticalUnit: 't',
-      confidence: 'INFERRED',
+      classificationConfidence: 'MEDIUM',
     };
   }
 
-  // 3. Fallback générique
-  return {
-    productId: 'crude_oil',
-    productName: 'Crude petroleum',
-    productNameFr: 'Pétrole brut',
-    categoryId: 'energy_hydrocarbons',
-    categoryNameFr: 'Hydrocarbures & Pétrole',
-    hsChapter: cleanCode.substring(0, 2) || '27',
-    hsHeading: cleanCode.substring(0, 4) || '2709',
-    nc8Code: cleanCode,
-    nc8DescriptionFr: `Code douanier ${cleanCode}`,
-    statisticalUnit: 't',
-    confidence: 'INFERRED',
-  };
+  return unknownProduct;
 }
 
 /**
- * Retourne le catalogue complet des nomenclatures supportées
+ * Retourne le catalogue local (non authentifié) des nomenclatures renseignées
  */
 export function getSupportedNomenclatures(): NC8Definition[] {
-  return Object.values(OFFICIAL_NC8_CATALOG);
+  return Object.values(LOCAL_NC8_CATALOG);
 }

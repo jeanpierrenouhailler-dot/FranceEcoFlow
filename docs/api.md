@@ -1,55 +1,21 @@
-# Spécification de l'API REST Backend
+# API REST — état et contrats actuellement implémentés
 
-Toutes les routes retournent des objets JSON formattés avec code HTTP standard et sont accessibles sous `/api/*`.
+Toutes les routes sont préfixées par `/api`. Les routes analytiques ne retournent que les observations présentes dans PostgreSQL qui ont le statut `VALIDATED` et une ligne de provenance liée à un fichier validé, avec URL et licence renseignées. En l’absence de telles observations, elles répondent `503 NOT_AVAILABLE`; aucun chiffre de démonstration n’est retourné.
 
-## Endpoints Principaux
+## Routes analytiques
 
-### 1. `GET /api/flows/summary`
-Retourne les indicateurs macroscopiques agrégés sur la sélection active.
-- **Paramètres de requête :**
-  - `reporter` (défaut: 'FR')
-  - `flow` ('import' ou 'export')
-  - `product` (défaut: 'crude_oil')
-  - `from` (ex: 2015)
-  - `to` (ex: 2026)
-  - `partner` (optionnel, ISO2 du partenaire)
-- **Réponse :**
-  ```json
-  {
-    "filters": { ... },
-    "summary": {
-      "totalQuantityTonnes": 48250000,
-      "totalValueEur": 17520000000,
-      "averageImplicitPriceEurPerTonne": 363.11,
-      "supplierCount": 14,
-      "hhiIndex": 1280,
-      "hhiClassification": "MODERATE",
-      "topSupplier": { ... },
-      "yoyQuantityChangePercent": -1.3,
-      "yoyPriceChangePercent": -1.8
-    }
-  }
-  ```
+Les routes `GET /flows`, `/flows/summary`, `/flows/partners`, `/flows/timeseries`, `/flows/sankey`, `/flows/anomalies`, `/countries/:id`, `/products/:id` et `/export` lisent depuis `trade_flows` via le repository PostgreSQL.
 
-### 2. `GET /api/flows/partners`
-Retourne la liste ordonnée des pays partenaires avec leurs parts de marché respectives, volumes et prix implicites.
+Filtres disponibles sur les routes de flux : `reporter` (défaut `FR`), `flow` (`import`/`export`), `product` (défaut `crude_oil`), `from`, `to`, `partner`, `periodType` (`annual`/`monthly`). La validation complète des paramètres, la pagination des résultats et les limites configurables restent à implémenter.
 
-### 3. `GET /api/flows/timeseries`
-Retourne les séries annuelles ou mensuelles de volume (tonnes), valeur (€) et prix unitaire (€/t).
+## Référentiels, système et ingestion
 
-### 4. `GET /api/flows/sankey`
-Structure nœuds et liens optimisée pour le rendu du diagramme de flux de Sankey.
+- `GET /countries`, `/countries/:id`, `/products`, `/products/:id` : listes locales de référence pour l’interface; elles ne sont pas encore administrées depuis PostgreSQL.
+- `GET /products/resolve-nc8` et `/products/nomenclatures` : résolution depuis le catalogue NC8 local, incomplet et non authentifié; une correspondance n’atteste pas une observation.
+- `GET /sources`, `/sources/registry`, `/sources/health` : métadonnées des sources envisagées; les neuf connecteurs restent indisponibles.
+- `GET /ingestion/report`, `/ingestion/files`, `/ingestion/raw-sample` : état et métadonnées des fichiers, sans lever leur quarantaine.
+- `GET /database/status`, `/database/spatial/within`, `/infrastructures`, `/infrastructures/:id`, `/transport-routes`, `/sources/insee`, `/sources/energy` : accès DB/PostGIS; aucune donnée de référence opérationnelle n’est actuellement attestée.
+- `POST /sources/ingest` : opération protégée par `Authorization: Bearer <INGESTION_ADMIN_TOKEN>`. Répond `503` si le secret n’est pas configuré, `401` si le jeton est invalide. Les sources actuelles répondent encore `NOT_AVAILABLE`.
+- `GET /health` : état de santé global; `503` lorsque PostgreSQL/PostGIS n’est pas connecté.
 
-### 5. `GET /api/flows/anomalies`
-Détection des chocs géopolitiques et variations structurelles sur le produit spécifié.
-
-### 6. `GET /api/countries/:id`
-Fiche détaillée bilatérale d'un pays avec la France (historique, flux, routes et ports connectés).
-
-### 7. `GET /api/infrastructures`
-Répertoire des ports, terminaux et raffineries avec coordonnées et capacités.
-
-### 8. `GET /api/export`
-Génère un export complet au format CSV ou JSON.
-- `GET /api/export?format=csv&from=2015&to=2026`
-- `GET /api/export?format=json&from=2015&to=2026`
+Cette page documente le code courant, pas une disponibilité de production. Les filtres ne sont pas tous strictement validés, les exports/listes ne sont pas encore paginés et aucune recette de l’API contre une vraie base n’a été exécutée.

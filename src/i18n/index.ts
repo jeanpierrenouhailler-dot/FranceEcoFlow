@@ -36,8 +36,8 @@ export const translations = {
     },
     confidence: {
       CONFIRMED: 'Confirmé (provenance vérifiée)',
-      DOCUMENTED: 'Documenté (Sources croisées)',
-      PROBABLE: 'Probable (Estimation déduite)',
+      DOCUMENTED: 'Documenté',
+      PROBABLE: 'Probable (estimation)',
       UNKNOWN: 'Non déterminé',
     },
     export: {
@@ -85,8 +85,8 @@ export const translations = {
     },
     confidence: {
       CONFIRMED: 'Confirmed (verified provenance)',
-      DOCUMENTED: 'Documented (Cross-referenced)',
-      PROBABLE: 'Probable (Inferred estimate)',
+      DOCUMENTED: 'Documented',
+      PROBABLE: 'Probable (inferred estimate)',
       UNKNOWN: 'Undetermined',
     },
     export: {

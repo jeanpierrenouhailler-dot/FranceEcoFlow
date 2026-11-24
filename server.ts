@@ -22,13 +22,26 @@ async function startServer() {
 
   app.use(express.json());
 
-  // CORS and Cache Control for API
+  const configuredOrigins = new Set(
+    (process.env.APP_URL || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => new URL(value).origin)
+  );
+
+  // Cross-origin API access is limited to explicitly configured application origins.
   app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    const origin = req.get('origin');
+    const originAllowed = Boolean(origin && (configuredOrigins.has(origin) || !isProduction));
+    res.vary('Origin');
+    if (origin && originAllowed) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
     if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
+      return res.sendStatus(originAllowed ? 204 : 403);
     }
     next();
   });
@@ -38,8 +51,12 @@ async function startServer() {
 
   // Health check
   app.get('/api/health', (_req: Request, res: Response) => {
-    const database = getDatabaseStatus();
-    const healthy = database.connected;
+    const databaseStatus = getDatabaseStatus();
+    const healthy = databaseStatus.connected;
+    const database = {
+      ...databaseStatus,
+      lastError: databaseStatus.lastError ? 'PostgreSQL/PostGIS is unavailable.' : undefined,
+    };
     res.status(healthy ? 200 : 503).json({
       status: healthy ? 'healthy' : 'degraded',
       app: 'France Economic Flow Explorer',

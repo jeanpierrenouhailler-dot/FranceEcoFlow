@@ -504,12 +504,12 @@ export const IngestionAuditView: React.FC = () => {
                   </div>
 
                   <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase block">Niveau de Confiance</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">Confiance de classification</span>
                     <span className="font-mono font-bold text-emerald-400 text-sm">
-                      {resolvedProductInfo.confidence}
+                      {resolvedProductInfo.classificationConfidence}
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      Catalogue DGDDI (référence)
+                      Catalogue local non authentifié; ne prouve pas l’observation
                     </span>
                   </div>
                 </div>
@@ -517,7 +517,7 @@ export const IngestionAuditView: React.FC = () => {
             </div>
           </div>
 
-          {/* Official Catalog Table */}
+          {/* Locally maintained catalog */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Layers className="w-4 h-4 text-cyan-400" />
@@ -530,7 +530,7 @@ export const IngestionAuditView: React.FC = () => {
                   <tr className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px]">
                     <th className="py-2.5 px-3">Code NC8</th>
                     <th className="py-2.5 px-3">Position SH</th>
-                    <th className="py-2.5 px-3">Libellé Officiel Douanes (DGDDI)</th>
+                    <th className="py-2.5 px-3">Libellé du catalogue local non authentifié</th>
                     <th className="py-2.5 px-3">Produit Cible</th>
                     <th className="py-2.5 px-3">Catégorie</th>
                     <th className="py-2.5 px-3 text-center">Unité</th>

@@ -37,7 +37,7 @@ export function ingestAllCustomsData(): {
     const stat = fs.existsSync(filePath) ? fs.statSync(filePath) : undefined;
     return {
       fileName: path.basename(filePath),
-      filePath,
+      filePath: record.path,
       fileSizeBytes: stat?.size ?? 0,
       sha256Hash: record.sha256,
       recordCount: 0,

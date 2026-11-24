@@ -29,7 +29,7 @@ export class EurostatConnector implements SourceConnector<EconomicFlow> {
         valueEur,
         quantityTonnes,
         implicitPriceEurPerTonne,
-        confidence: 'CONFIRMED',
+        confidence: 'UNKNOWN',
         sourceId: this.id,
         datasetId: 'eurostat_nrg_ti_oil',
       });

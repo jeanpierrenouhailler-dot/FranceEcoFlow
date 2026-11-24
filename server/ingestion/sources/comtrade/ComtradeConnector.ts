@@ -37,7 +37,7 @@ export class ComtradeConnector implements SourceConnector<EconomicFlow> {
         valueEur: item.primaryValue,
         quantityTonnes,
         implicitPriceEurPerTonne,
-        confidence: 'CONFIRMED',
+        confidence: 'UNKNOWN',
         sourceId: this.id,
         datasetId: 'un_comtrade_v1',
       });

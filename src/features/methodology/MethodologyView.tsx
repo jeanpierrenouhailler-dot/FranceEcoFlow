@@ -45,7 +45,7 @@ export const MethodologyView: React.FC = () => {
           <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800 space-y-1.5">
             <span className="font-bold text-emerald-400 font-mono">CONFIRMED (Confirmé)</span>
             <p className="text-slate-300">
-              Niveau réservé aux données dont la source primaire et la provenance ont été authentifiées. Les fichiers actuellement fournis dans le dépôt sont en quarantaine.
+              Statut réservé aux observations dont la source primaire et la provenance ont été authentifiées et validées. Aucun fichier économique actuellement fourni dans le dépôt ne remplit cette condition.
             </p>
           </div>
           <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-800 space-y-1.5">

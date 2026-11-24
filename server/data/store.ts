@@ -15,8 +15,7 @@ import {
   SankeyData,
   TimeseriesPoint,
 } from '../../src/types/index.ts';
-import { getIngestedFlows, getAuditReport, getIngestedFiles } from './ingestion/index.ts';
-import { getLoadedEconomicFlows } from '../ingestion/dgddi/index.ts';
+import { getAuditReport, getIngestedFiles } from './ingestion/index.ts';
 
 
 // ============================================================
@@ -374,9 +373,6 @@ export const transportRoutes: TransportRoute[] = [];
 // Implicit unit price = declared CIF value / declared net mass.
 // No Brent multiplier, no currency conversion, no simulated trigonometric formulas.
 // ============================================================
-export const economicFlows: EconomicFlow[] = getLoadedEconomicFlows();
-
-
 export function getIngestionReport() {
   return getAuditReport();
 }
@@ -400,11 +396,11 @@ export interface FlowQueryFilter {
   periodType?: 'annual' | 'monthly';
 }
 
-export function filterFlows(filter: FlowQueryFilter): EconomicFlow[] {
+export function filterFlows(filter: FlowQueryFilter, flowRows: EconomicFlow[]): EconomicFlow[] {
   const reporter = filter.reporterCountryId || 'FR';
   const flowType = filter.flowType || 'import';
   const product = filter.productId || 'crude_oil';
-  return economicFlows.filter((flow) => {
+  return flowRows.filter((flow) => {
     if (flow.reporterCountryId !== reporter) return false;
     if (flow.flowType !== flowType) return false;
     if (flow.productId !== product) return false;
@@ -421,9 +417,12 @@ export function filterFlows(filter: FlowQueryFilter): EconomicFlow[] {
   });
 }
 
-export function calculateFlowSummary(filter: FlowQueryFilter): FlowAnalysisSummary {
+export function calculateFlowSummary(
+  filter: FlowQueryFilter,
+  flowRows: EconomicFlow[]
+): FlowAnalysisSummary {
   // Always use annual records for the aggregate summary
-  const flows = filterFlows({ ...filter, periodType: 'annual' });
+  const flows = filterFlows({ ...filter, periodType: 'annual' }, flowRows);
 
   let totalQuantityTonnes = 0;
   let totalValueEur = 0;
@@ -459,7 +458,6 @@ export function calculateFlowSummary(filter: FlowQueryFilter): FlowAnalysisSumma
       iso3: pId,
       region: 'Unknown',
       subregion: 'Unknown',
-      coordinates: [0, 0] as [number, number],
       flag: '🌐',
     };
 
@@ -472,7 +470,7 @@ export function calculateFlowSummary(filter: FlowQueryFilter): FlowAnalysisSumma
       implicitPriceEurPerTonne:
         data.quantity > 0 ? Math.round((data.value / data.quantity) * 100) / 100 : 0,
       rank: 0,
-      confidence: 'CONFIRMED',
+      confidence: 'UNKNOWN',
     });
   });
 
@@ -531,8 +529,11 @@ export function calculateFlowSummary(filter: FlowQueryFilter): FlowAnalysisSumma
   };
 }
 
-export function getSupplierRankings(filter: FlowQueryFilter): SupplierSummary[] {
-  const flows = filterFlows({ ...filter, periodType: 'annual' });
+export function getSupplierRankings(
+  filter: FlowQueryFilter,
+  flowRows: EconomicFlow[]
+): SupplierSummary[] {
+  const flows = filterFlows({ ...filter, periodType: 'annual' }, flowRows);
   const totalQuantity = flows.reduce((sum, f) => sum + f.quantityTonnes, 0);
 
   const map = new Map<string, { quantity: number; value: number }>();
@@ -553,7 +554,6 @@ export function getSupplierRankings(filter: FlowQueryFilter): SupplierSummary[] 
       iso3: pId,
       region: 'Unknown',
       subregion: 'Unknown',
-      coordinates: [0, 0] as [number, number],
       flag: '🌐',
     };
 
@@ -566,7 +566,7 @@ export function getSupplierRankings(filter: FlowQueryFilter): SupplierSummary[] 
       implicitPriceEurPerTonne:
         data.quantity > 0 ? Math.round((data.value / data.quantity) * 100) / 100 : 0,
       rank: 0,
-      confidence: 'CONFIRMED',
+      confidence: 'UNKNOWN',
     });
   });
 
@@ -578,8 +578,11 @@ export function getSupplierRankings(filter: FlowQueryFilter): SupplierSummary[] 
   return list;
 }
 
-export function getTimeseriesData(filter: FlowQueryFilter): TimeseriesPoint[] {
-  const flows = filterFlows({ ...filter, periodType: 'annual' });
+export function getTimeseriesData(
+  filter: FlowQueryFilter,
+  flowRows: EconomicFlow[]
+): TimeseriesPoint[] {
+  const flows = filterFlows({ ...filter, periodType: 'annual' }, flowRows);
   const yearMap = new Map<number, { quantity: number; value: number }>();
 
   flows.forEach((f) => {
@@ -607,8 +610,11 @@ export function getTimeseriesData(filter: FlowQueryFilter): TimeseriesPoint[] {
   return points;
 }
 
-export function getSankeyData(filter: FlowQueryFilter): SankeyData {
-  const suppliers = getSupplierRankings(filter);
+export function getSankeyData(
+  filter: FlowQueryFilter,
+  flowRows: EconomicFlow[]
+): SankeyData {
+  const suppliers = getSupplierRankings(filter, flowRows);
   const product = products.find((p) => p.id === (filter.productId || 'crude_oil')) || products[0];
 
   const nodes: { name: string; category?: string }[] = [];
@@ -663,9 +669,12 @@ export function getSankeyData(filter: FlowQueryFilter): SankeyData {
   return { nodes, links };
 }
 
-export function detectAnomalies(productId: string = 'crude_oil'): AnomalyDetection[] {
+export function detectAnomalies(
+  productId: string = 'crude_oil',
+  flowRows: EconomicFlow[]
+): AnomalyDetection[] {
   const byPartnerAndYear = new Map<string, Map<number, number>>();
-  for (const flow of economicFlows) {
+  for (const flow of flowRows) {
     if (flow.productId !== productId || flow.flowType !== 'import' || flow.periodMonth !== undefined) continue;
     const years = byPartnerAndYear.get(flow.partnerCountryId) ?? new Map<number, number>();
     years.set(flow.periodYear, (years.get(flow.periodYear) ?? 0) + flow.quantityTonnes);

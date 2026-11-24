@@ -3,6 +3,9 @@ import path from 'path';
 import crypto from 'crypto';
 import { EconomicFlow } from '../../../src/types/index.ts';
 import { IngestedFileMetadata } from './types.ts';
+import { fileURLToPath } from 'url';
+
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 function computeSha256(filePath: string): string {
   const fileBuffer = fs.readFileSync(filePath);
@@ -53,7 +56,7 @@ export function loadDGDDIAnnualFile(filePath: string): {
       valueEur: valueCafEur,
       quantityTonnes,
       implicitPriceEurPerTonne,
-      confidence: 'CONFIRMED',
+      confidence: 'UNKNOWN',
       sourceId: 'dgddi',
       datasetId: 'dgddi_annual_series',
     });
@@ -62,7 +65,7 @@ export function loadDGDDIAnnualFile(filePath: string): {
   const stat = fs.statSync(filePath);
   const metadata: IngestedFileMetadata = {
     fileName: path.basename(filePath),
-    filePath,
+    filePath: path.relative(projectRoot, filePath),
     fileSizeBytes: stat.size,
     sha256Hash: computeSha256(filePath),
     recordCount: flows.length,
@@ -114,7 +117,7 @@ export function loadDGDDIMonthlyFile(filePath: string): {
       valueEur: valueCafEur,
       quantityTonnes,
       implicitPriceEurPerTonne,
-      confidence: 'CONFIRMED',
+      confidence: 'UNKNOWN',
       sourceId: 'dgddi',
       datasetId: 'dgddi_nc8_monthly',
     });
@@ -123,7 +126,7 @@ export function loadDGDDIMonthlyFile(filePath: string): {
   const stat = fs.statSync(filePath);
   const metadata: IngestedFileMetadata = {
     fileName: path.basename(filePath),
-    filePath,
+    filePath: path.relative(projectRoot, filePath),
     fileSizeBytes: stat.size,
     sha256Hash: computeSha256(filePath),
     recordCount: flows.length,

@@ -1,11 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import {
   sources,
   datasets,
   countries,
   products,
   productCategories,
-  filterFlows,
   calculateFlowSummary,
   getSupplierRankings,
   getTimeseriesData,
@@ -23,6 +22,7 @@ import { dbRepository } from '../db/repository.ts';
 import { sourceRegistry } from '../ingestion/sources/index.ts';
 import { resolveProductFromNC8, getSupportedNomenclatures } from '../normalization/products.ts';
 import { isDatasetVerified } from '../data/ingestion/provenance.ts';
+import { validateAdminBearerToken } from './adminAuth.ts';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +30,24 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../..');
 
 const router = Router();
+
+function logApiFailure(operation: string, error: unknown): void {
+  const errorName = error instanceof Error ? error.name : 'UnknownError';
+  console.error(`[API] ${operation} failed (${errorName}).`);
+}
+
+function requireIngestionAdmin(req: Request, res: Response, next: NextFunction): void {
+  const status = validateAdminBearerToken(req.get('authorization'), process.env.INGESTION_ADMIN_TOKEN);
+  if (status === 'NOT_CONFIGURED') {
+    res.status(503).json({ error: 'Ingestion administration is not configured.' });
+    return;
+  }
+  if (status !== 'VALID') {
+    res.status(401).json({ error: 'Administrator authentication is required.' });
+    return;
+  }
+  next();
+}
 
 // Helper to extract and validate query filters
 function extractFilters(req: Request): FlowQueryFilter {
@@ -44,106 +62,124 @@ function extractFilters(req: Request): FlowQueryFilter {
   };
 }
 
-function requireVerifiedFlowData(res: Response): boolean {
-  const report = getIngestionReport();
-  if (report.overallStatus === 'PASSED' && report.totalRecordsLoaded > 0) return true;
-  res.status(503).json({
-    error: 'No provenance-verified trade-flow dataset is available.',
-    status: 'NOT_AVAILABLE',
-    ingestionReport: report,
-  });
-  return false;
+async function getPublishedFlowRows(filters: FlowQueryFilter, res: Response) {
+  try {
+    const rows = await dbRepository.findPublishedTradeFlows(filters);
+    if (rows.length > 0) return rows;
+    res.status(503).json({
+      error: 'No validated, provenance-linked trade-flow observations are available in PostgreSQL.',
+      status: 'NOT_AVAILABLE',
+    });
+  } catch (error) {
+    logApiFailure('read published trade flows', error);
+    res.status(503).json({ error: 'Published trade-flow database is unavailable.' });
+  }
+  return undefined;
 }
 
 // 1. GET /api/flows
-router.get('/flows', (req: Request, res: Response) => {
+router.get('/flows', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
-    const flows = filterFlows(filters);
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
     res.json({
       filters,
       count: flows.length,
       data: flows,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve trade flows', details: String(error) });
+    logApiFailure('retrieve trade flows', error);
+    res.status(500).json({ error: 'Failed to retrieve trade flows' });
   }
 });
 
 // 2. GET /api/flows/summary
-router.get('/flows/summary', (req: Request, res: Response) => {
+router.get('/flows/summary', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
-    const summary = calculateFlowSummary(filters);
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
+    const summary = calculateFlowSummary(filters, flows);
     res.json({
       filters,
       summary,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to calculate summary', details: String(error) });
+    logApiFailure('calculate flow summary', error);
+    res.status(500).json({ error: 'Failed to calculate summary' });
   }
 });
 
 // 3. GET /api/flows/timeseries
-router.get('/flows/timeseries', (req: Request, res: Response) => {
+router.get('/flows/timeseries', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
-    const timeseries = getTimeseriesData(filters);
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
+    const timeseries = getTimeseriesData(filters, flows);
     res.json({
       filters,
       data: timeseries,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve timeseries', details: String(error) });
+    logApiFailure('retrieve timeseries', error);
+    res.status(500).json({ error: 'Failed to retrieve timeseries' });
   }
 });
 
 // 4. GET /api/flows/partners
-router.get('/flows/partners', (req: Request, res: Response) => {
+router.get('/flows/partners', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
-    const partners = getSupplierRankings(filters);
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
+    const partners = getSupplierRankings(filters, flows);
     res.json({
       filters,
       count: partners.length,
       data: partners,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve partner rankings', details: String(error) });
+    logApiFailure('retrieve partner rankings', error);
+    res.status(500).json({ error: 'Failed to retrieve partner rankings' });
   }
 });
 
 // 5. GET /api/flows/sankey
-router.get('/flows/sankey', (req: Request, res: Response) => {
+router.get('/flows/sankey', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const filters = extractFilters(req);
-    const sankey = getSankeyData(filters);
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
+    const sankey = getSankeyData(filters, flows);
     res.json({
       filters,
       data: sankey,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve Sankey structure', details: String(error) });
+    logApiFailure('retrieve Sankey structure', error);
+    res.status(500).json({ error: 'Failed to retrieve Sankey structure' });
   }
 });
 
 // 6. GET /api/flows/anomalies
-router.get('/flows/anomalies', (req: Request, res: Response) => {
+router.get('/flows/anomalies', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const productId = (req.query.product as string) || 'crude_oil';
-    const anomalies = detectAnomalies(productId);
+    const flows = await getPublishedFlowRows(
+      { reporterCountryId: 'FR', flowType: 'import', productId, periodType: 'annual' },
+      res
+    );
+    if (!flows) return;
+    const anomalies = detectAnomalies(productId, flows);
     res.json({
       productId,
       data: anomalies,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve anomalies', details: String(error) });
+    logApiFailure('retrieve anomalies', error);
+    res.status(500).json({ error: 'Failed to retrieve anomalies' });
   }
 });
 
@@ -153,17 +189,24 @@ router.get('/countries', (_req: Request, res: Response) => {
 });
 
 router.get('/countries/:id', async (req: Request, res: Response) => {
-  if (!requireVerifiedFlowData(res)) return;
   try {
     const country = countries.find((c) => c.id.toUpperCase() === req.params.id.toUpperCase());
     if (!country) {
       return res.status(404).json({ error: `Country '${req.params.id}' not found` });
     }
 
-    const flows = filterFlows({ partnerCountryId: country.id, periodType: 'annual' });
-    const partnerRankings = getSupplierRankings({ partnerCountryId: country.id });
-    const summary = calculateFlowSummary({ partnerCountryId: country.id });
-    const timeseries = getTimeseriesData({ partnerCountryId: country.id });
+    const filters = {
+      reporterCountryId: 'FR',
+      flowType: 'import' as const,
+      productId: 'crude_oil',
+      partnerCountryId: country.id,
+      periodType: 'annual' as const,
+    };
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
+    const partnerRankings = getSupplierRankings(filters, flows);
+    const summary = calculateFlowSummary(filters, flows);
+    const timeseries = getTimeseriesData(filters, flows);
     const relatedRoutes = (await dbRepository.findTransportRoutes()).filter((r) => r.sourcePartnerId === country.id);
 
     res.json({
@@ -175,7 +218,8 @@ router.get('/countries/:id', async (req: Request, res: Response) => {
       transportRoutes: relatedRoutes,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve country data', details: String(error) });
+    logApiFailure('retrieve country data', error);
+    res.status(500).json({ error: 'Failed to retrieve country data' });
   }
 });
 
@@ -198,28 +242,37 @@ router.get('/products/resolve-nc8', (req: Request, res: Response) => {
   res.json({ data: resolution });
 });
 
-// GET /api/products/nomenclatures (Catalog of supported NC8/HS classifications)
+// GET /api/products/nomenclatures (Local, unauthenticated NC8/HS mapping catalog)
 router.get('/products/nomenclatures', (_req: Request, res: Response) => {
   const nomenclatures = getSupportedNomenclatures();
   res.json({ count: nomenclatures.length, data: nomenclatures });
 });
 
-router.get('/products/:id', (req: Request, res: Response) => {
-  if (!requireVerifiedFlowData(res)) return;
-  const product = products.find((p) => p.id === req.params.id);
-  if (!product) {
-    return res.status(404).json({ error: `Product '${req.params.id}' not found` });
-  }
-  const summary = calculateFlowSummary({ productId: product.id });
-  const partners = getSupplierRankings({ productId: product.id });
-  const timeseries = getTimeseriesData({ productId: product.id });
+router.get('/products/:id', async (req: Request, res: Response) => {
+  try {
+    const product = products.find((p) => p.id === req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: `Product '${req.params.id}' not found` });
+    }
+    const filters = {
+      reporterCountryId: 'FR',
+      flowType: 'import' as const,
+      productId: product.id,
+      periodType: 'annual' as const,
+    };
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
 
-  res.json({
-    product,
-    summary,
-    partners,
-    timeseries,
-  });
+    res.json({
+      product,
+      summary: calculateFlowSummary(filters, flows),
+      partners: getSupplierRankings(filters, flows),
+      timeseries: getTimeseriesData(filters, flows),
+    });
+  } catch (error) {
+    logApiFailure('retrieve product data', error);
+    res.status(500).json({ error: 'Failed to retrieve product data' });
+  }
 });
 
 // 9. GET /api/infrastructures
@@ -229,7 +282,8 @@ router.get('/infrastructures', async (req: Request, res: Response) => {
     const list = await dbRepository.findInfrastructures(type);
     res.json({ count: list.length, data: list });
   } catch (error) {
-    res.status(503).json({ error: 'Infrastructure database is unavailable', details: String(error) });
+    logApiFailure('retrieve infrastructures', error);
+    res.status(503).json({ error: 'Infrastructure database is unavailable' });
   }
 });
 
@@ -241,7 +295,8 @@ router.get('/infrastructures/:id', async (req: Request, res: Response) => {
     }
     res.json({ data: item });
   } catch (error) {
-    res.status(503).json({ error: 'Infrastructure database is unavailable', details: String(error) });
+    logApiFailure('retrieve infrastructure', error);
+    res.status(503).json({ error: 'Infrastructure database is unavailable' });
   }
 });
 
@@ -255,7 +310,8 @@ router.get('/transport-routes', async (req: Request, res: Response) => {
       : allRoutes;
     res.json({ count: routes.length, data: routes });
   } catch (error) {
-    res.status(503).json({ error: 'Transport route database is unavailable', details: String(error) });
+    logApiFailure('retrieve transport routes', error);
+    res.status(503).json({ error: 'Transport route database is unavailable' });
   }
 });
 
@@ -268,14 +324,14 @@ router.get('/sources', (_req: Request, res: Response) => {
 });
 
 // 12. GET /api/export
-router.get('/export', (req: Request, res: Response) => {
+router.get('/export', async (req: Request, res: Response) => {
   try {
-    if (!requireVerifiedFlowData(res)) return;
     const format = (req.query.format as string) || 'json';
     const filters = extractFilters(req);
-    const flows = filterFlows(filters);
-    const summary = calculateFlowSummary(filters);
-    const partners = getSupplierRankings(filters);
+    const flows = await getPublishedFlowRows(filters, res);
+    if (!flows) return;
+    const summary = calculateFlowSummary(filters, flows);
+    const partners = getSupplierRankings(filters, flows);
 
     if (format === 'csv') {
       const csvHeader =
@@ -318,7 +374,8 @@ router.get('/export', (req: Request, res: Response) => {
       sources,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Export failed', details: String(error) });
+    logApiFailure('export flows', error);
+    res.status(500).json({ error: 'Export failed' });
   }
 });
 
@@ -328,7 +385,8 @@ router.get('/ingestion/report', (_req: Request, res: Response) => {
     const report = getIngestionReport();
     res.json({ data: report });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve ingestion report', details: String(error) });
+    logApiFailure('retrieve ingestion report', error);
+    res.status(500).json({ error: 'Failed to retrieve ingestion report' });
   }
 });
 
@@ -338,7 +396,8 @@ router.get('/ingestion/files', (_req: Request, res: Response) => {
     const files = getRawSourceFiles();
     res.json({ data: files });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve ingested files', details: String(error) });
+    logApiFailure('retrieve ingested files', error);
+    res.status(500).json({ error: 'Failed to retrieve ingested files' });
   }
 });
 
@@ -383,14 +442,21 @@ router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
       }),
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to read raw sample', details: String(error) });
+    logApiFailure('read raw sample', error);
+    res.status(500).json({ error: 'Failed to read raw sample' });
   }
 });
 
 
 // 16. GET /api/database/status
 router.get('/database/status', (_req: Request, res: Response) => {
-  res.json({ data: getDatabaseStatus() });
+  const { lastError, ...status } = getDatabaseStatus();
+  res.json({
+    data: {
+      ...status,
+      lastError: lastError ? 'PostgreSQL/PostGIS is unavailable.' : undefined,
+    },
+  });
 });
 
 // 17. GET /api/database/spatial/within (PostGIS ST_DWithin query)
@@ -415,7 +481,8 @@ router.get('/database/spatial/within', async (req: Request, res: Response) => {
       data: results,
     });
   } catch (err) {
-    res.status(500).json({ error: 'Spatial query failed', details: String(err) });
+    logApiFailure('run spatial query', err);
+    res.status(500).json({ error: 'Spatial query failed' });
   }
 });
 
@@ -445,7 +512,8 @@ router.get('/sources/insee', async (req: Request, res: Response) => {
     const indicators = await dbRepository.findInseeIndicators(code);
     res.json({ count: indicators.length, data: indicators });
   } catch (error) {
-    res.status(503).json({ error: 'INSEE observations are unavailable from PostgreSQL.', details: String(error) });
+    logApiFailure('retrieve INSEE observations', error);
+    res.status(503).json({ error: 'INSEE observations are unavailable from PostgreSQL.' });
   }
 });
 
@@ -457,12 +525,13 @@ router.get('/sources/energy', async (req: Request, res: Response) => {
     const observations = await dbRepository.findEnergyObservations(metric);
     res.json({ count: observations.length, data: observations });
   } catch (error) {
-    res.status(503).json({ error: 'Energy observations are unavailable from PostgreSQL.', details: String(error) });
+    logApiFailure('retrieve energy observations', error);
+    res.status(503).json({ error: 'Energy observations are unavailable from PostgreSQL.' });
   }
 });
 
 // 22. POST /api/sources/ingest (Trigger on-demand multi-source ingestion)
-router.post('/sources/ingest', async (_req: Request, res: Response) => {
+router.post('/sources/ingest', requireIngestionAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await sourceRegistry.runAllIngestions();
     const failedSources = Object.entries(result.results)
@@ -477,7 +546,8 @@ router.post('/sources/ingest', async (_req: Request, res: Response) => {
       data: result,
     });
   } catch (err) {
-    res.status(500).json({ error: 'Ingestion pipeline failed', details: String(err) });
+    logApiFailure('run source ingestion', err);
+    res.status(500).json({ error: 'Ingestion pipeline failed' });
   }
 });
 

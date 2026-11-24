@@ -16,7 +16,7 @@ L’interface contient des vues d’exploration pour les flux commerciaux et én
   - **Indice de concentration HHI :** Mesure de la vulnérabilité des approvisionnements avec seuils réglementaires (Commission Européenne / US DoJ).
   - **Diagramme de Sankey :** Visualisation des flux entre pays d'origine, le hub France et les unités de raffinage.
   - **Détection des variations :** Les anomalies ne sont calculées qu’à partir de flux annuels chargés et vérifiés.
-- **PWA :** L’interface est installable ; les réponses d’API en cache ne sont plus réutilisées comme données actuelles après une erreur réseau.
+- **PWA :** L’interface est installable et les ressources statiques/polices sont mises en cache. Les réponses API ne sont pas mises en cache pour un usage hors ligne; les données restent indisponibles sans serveur.
 - **Export & Partage :** Les exports de flux sont désactivés tant qu’aucun jeu de données vérifié n’est disponible.
 
 ---
@@ -36,7 +36,7 @@ L’interface contient des vues d’exploration pour les flux commerciaux et én
 
 ```bash
 # 1. Cloner et installer les dépendances
-npm install
+bun install --frozen-lockfile
 
 # 2. Configurer les variables d'environnement et une base PostgreSQL/PostGIS
 cp .env.example .env
@@ -45,8 +45,10 @@ cp .env.example .env
 # 3. Lancer le serveur unifié (API Express + Vite middlewares sur le port 3000)
 npm run dev
 
-# 4. Lancer les tests unitaires
-npm test
+# 4. Vérifications locales
+bun run test
+bun run lint
+bun run build
 ```
 
 Accéder à l'application dans votre navigateur : `http://localhost:3000`.
@@ -90,6 +92,12 @@ Les clés `COMTRADE_API_KEY` et `EIA_API_KEY` doivent être fournies par un gest
 - [Modèle de données & Schéma relationnel](docs/data-model.md)
 - [Spécification des APIs REST](docs/api.md)
 - [Méthodologie & Formules mathématiques](docs/methodology.md)
+- [Audit initial de préparation à la production](docs/audit-production-initial.md)
+- [Provenance et qualité des données](docs/data-provenance.md)
+- [Sécurité](docs/security.md)
+- [Migrations de base](docs/database-migrations.md)
+- [Déploiement production](docs/deployment-production.md)
+- [Stratégie de tests](docs/testing.md)
 
 ---
 

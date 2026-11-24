@@ -1,4 +1,5 @@
 import pg from 'pg';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -106,29 +107,77 @@ export function getDatabaseStatus(): DatabaseStatus {
 }
 
 export async function runMigrations(): Promise<{ success: boolean; message: string }> {
-  const schemaPath = path.resolve(__dirname, 'schema.sql');
-  if (!fs.existsSync(schemaPath)) {
-    return { success: false, message: 'schema.sql not found' };
-  }
-
-  const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
-
   if (!pool || !isRealPostgresConnected) {
     return { success: false, message: lastConnectionError || 'PostgreSQL/PostGIS is not connected.' };
+  }
+
+  const migrationsPath = path.resolve(__dirname, '../../database/migrations');
+  if (!fs.existsSync(migrationsPath)) {
+    return { success: false, message: 'Database migrations directory not found.' };
+  }
+  const migrationFiles = fs.readdirSync(migrationsPath)
+    .filter((name) => /^\d+_[a-z0-9_-]+\.sql$/i.test(name))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  if (migrationFiles.length === 0) {
+    return { success: false, message: 'No versioned database migrations were found.' };
   }
 
   let client: pg.PoolClient | undefined;
   try {
     client = await pool.connect();
-    await client.query('BEGIN');
-    await client.query(schemaSql);
-    await client.query('COMMIT');
-    return { success: true, message: 'PostgreSQL/PostGIS schema applied successfully.' };
+    await client.query("SELECT pg_advisory_lock(hashtext('franceecoflow:schema-migrations'))");
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version VARCHAR(255) PRIMARY KEY,
+        checksum_sha256 CHAR(64) NOT NULL,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    let appliedCount = 0;
+    for (const fileName of migrationFiles) {
+      const version = fileName.slice(0, -'.sql'.length);
+      const sql = fs.readFileSync(path.join(migrationsPath, fileName), 'utf-8');
+      const checksum = crypto.createHash('sha256').update(sql).digest('hex');
+      const existing = await client.query<{ checksum_sha256: string }>(
+        'SELECT checksum_sha256 FROM schema_migrations WHERE version = $1;',
+        [version]
+      );
+      if (existing.rows.length > 0) {
+        if (existing.rows[0].checksum_sha256.trim() !== checksum) {
+          throw new Error(`Applied migration ${version} has changed; create a new migration instead.`);
+        }
+        continue;
+      }
+
+      await client.query('BEGIN');
+      try {
+        await client.query(sql);
+        await client.query(
+          'INSERT INTO schema_migrations (version, checksum_sha256) VALUES ($1, $2);',
+          [version, checksum]
+        );
+        await client.query('COMMIT');
+        appliedCount++;
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      }
+    }
+
+    return {
+      success: true,
+      message: appliedCount === 0
+        ? 'Database migrations are up to date.'
+        : `${appliedCount} database migration(s) applied successfully.`,
+    };
   } catch (err: any) {
-    if (client) await client.query('ROLLBACK').catch(() => undefined);
     lastConnectionError = err.message;
     return { success: false, message: `Migration error: ${err.message}` };
   } finally {
-    client?.release();
+    if (client) {
+      await client.query("SELECT pg_advisory_unlock(hashtext('franceecoflow:schema-migrations'))").catch(() => undefined);
+      client.release();
+    }
   }
 }

@@ -21,30 +21,12 @@ import {
 } from '../types/index.ts';
 
 
-const CACHE_PREFIX = 'fefe_cache_';
-
-function setLocalCache<T>(key: string, data: T): void {
-  try {
-    localStorage.setItem(
-      CACHE_PREFIX + key,
-      JSON.stringify({
-        timestamp: Date.now(),
-        data,
-      })
-    );
-  } catch {
-    // Ignore quota errors
-  }
-}
-
-async function fetchWithCache<T>(url: string, cacheKey: string): Promise<T> {
+async function fetchApi<T>(url: string): Promise<T> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`HTTP error ${response.status}`);
   }
-  const json = await response.json();
-  setLocalCache(cacheKey, json);
-  return json;
+  return response.json();
 }
 
 export interface FlowParams {
@@ -72,30 +54,30 @@ function buildQuery(params?: FlowParams): string {
 export const api = {
   async getSummary(params?: FlowParams): Promise<{ filters: any; summary: FlowAnalysisSummary }> {
     const q = buildQuery(params);
-    return fetchWithCache(`/api/flows/summary${q}`, `summary_${q}`);
+    return fetchApi(`/api/flows/summary${q}`);
   },
 
   async getPartners(params?: FlowParams): Promise<{ filters: any; count: number; data: SupplierSummary[] }> {
     const q = buildQuery(params);
-    return fetchWithCache(`/api/flows/partners${q}`, `partners_${q}`);
+    return fetchApi(`/api/flows/partners${q}`);
   },
 
   async getTimeseries(params?: FlowParams): Promise<{ filters: any; data: TimeseriesPoint[] }> {
     const q = buildQuery(params);
-    return fetchWithCache(`/api/flows/timeseries${q}`, `timeseries_${q}`);
+    return fetchApi(`/api/flows/timeseries${q}`);
   },
 
   async getSankey(params?: FlowParams): Promise<{ filters: any; data: SankeyData }> {
     const q = buildQuery(params);
-    return fetchWithCache(`/api/flows/sankey${q}`, `sankey_${q}`);
+    return fetchApi(`/api/flows/sankey${q}`);
   },
 
   async getAnomalies(product: string = 'crude_oil'): Promise<{ productId: string; data: AnomalyDetection[] }> {
-    return fetchWithCache(`/api/flows/anomalies?product=${product}`, `anomalies_${product}`);
+    return fetchApi(`/api/flows/anomalies?product=${product}`);
   },
 
   async getCountries(): Promise<{ count: number; data: Country[] }> {
-    return fetchWithCache('/api/countries', 'countries_list');
+    return fetchApi('/api/countries');
   },
 
   async getCountryDetail(id: string): Promise<{
@@ -106,11 +88,11 @@ export const api = {
     flows: EconomicFlow[];
     transportRoutes: TransportRoute[];
   }> {
-    return fetchWithCache(`/api/countries/${id}`, `country_${id}`);
+    return fetchApi(`/api/countries/${id}`);
   },
 
   async getProducts(): Promise<{ categories: any[]; count: number; data: Product[] }> {
-    return fetchWithCache('/api/products', 'products_list');
+    return fetchApi('/api/products');
   },
 
   async getProductDetail(id: string): Promise<{
@@ -119,37 +101,37 @@ export const api = {
     partners: SupplierSummary[];
     timeseries: TimeseriesPoint[];
   }> {
-    return fetchWithCache(`/api/products/${id}`, `product_${id}`);
+    return fetchApi(`/api/products/${id}`);
   },
 
   async getInfrastructures(type?: string): Promise<{ count: number; data: Infrastructure[] }> {
     const q = type ? `?type=${type}` : '';
-    return fetchWithCache(`/api/infrastructures${q}`, `infrastructures_${type || 'all'}`);
+    return fetchApi(`/api/infrastructures${q}`);
   },
 
   async getTransportRoutes(partner?: string): Promise<{ count: number; data: TransportRoute[] }> {
     const q = partner ? `?partner=${partner}` : '';
-    return fetchWithCache(`/api/transport-routes${q}`, `routes_${partner || 'all'}`);
+    return fetchApi(`/api/transport-routes${q}`);
   },
 
   async getSources(): Promise<{ sources: Source[]; datasets: Dataset[] }> {
-    return fetchWithCache('/api/sources', 'sources_list');
+    return fetchApi('/api/sources');
   },
 
   async getIngestionReport(): Promise<{ data: IngestionAuditReport }> {
-    return fetchWithCache('/api/ingestion/report', 'ingestion_report');
+    return fetchApi('/api/ingestion/report');
   },
 
   async getIngestionFiles(): Promise<{ data: IngestedFileMetadata[] }> {
-    return fetchWithCache('/api/ingestion/files', 'ingestion_files');
+    return fetchApi('/api/ingestion/files');
   },
 
   async getRawCustomsSample(limit: number = 25): Promise<RawCustomsSample> {
-    return fetchWithCache(`/api/ingestion/raw-sample?limit=${limit}`, `raw_sample_${limit}`);
+    return fetchApi(`/api/ingestion/raw-sample?limit=${limit}`);
   },
 
   async getDatabaseStatus(): Promise<{ data: DatabaseStatus }> {
-    return fetchWithCache('/api/database/status', 'db_status');
+    return fetchApi('/api/database/status');
   },
 
   async getSpatialInfrastructuresWithin(
@@ -157,28 +139,25 @@ export const api = {
     lng: number,
     radiusKm: number
   ): Promise<{ center: [number, number]; radiusKm: number; count: number; data: any[] }> {
-    return fetchWithCache(
-      `/api/database/spatial/within?lat=${lat}&lng=${lng}&radius=${radiusKm}`,
-      `spatial_${lat}_${lng}_${radiusKm}`
-    );
+    return fetchApi(`/api/database/spatial/within?lat=${lat}&lng=${lng}&radius=${radiusKm}`);
   },
 
   async getSourceConnectors(): Promise<{ count: number; data: SourceConnectorMeta[] }> {
-    return fetchWithCache('/api/sources/registry', 'sources_registry');
+    return fetchApi('/api/sources/registry');
   },
 
   async getSourcesHealth(): Promise<{ data: { [sourceId: string]: any } }> {
-    return fetchWithCache('/api/sources/health', 'sources_health');
+    return fetchApi('/api/sources/health');
   },
 
   async getInseeIndicators(code?: string): Promise<{ count: number; data: InseeIndicator[] }> {
     const q = code ? `?code=${code}` : '';
-    return fetchWithCache(`/api/sources/insee${q}`, `insee_${code || 'all'}`);
+    return fetchApi(`/api/sources/insee${q}`);
   },
 
   async getEnergyObservations(metric?: string): Promise<{ count: number; data: EnergyObservation[] }> {
     const q = metric ? `?metric=${metric}` : '';
-    return fetchWithCache(`/api/sources/energy${q}`, `energy_${metric || 'all'}`);
+    return fetchApi(`/api/sources/energy${q}`);
   },
 
   async triggerIngestion(): Promise<any> {
@@ -187,11 +166,11 @@ export const api = {
   },
 
   async resolveNC8Product(code: string): Promise<{ data: any }> {
-    return fetchWithCache(`/api/products/resolve-nc8?code=${code}`, `nc8_res_${code}`);
+    return fetchApi(`/api/products/resolve-nc8?code=${code}`);
   },
 
   async getNomenclatures(): Promise<{ count: number; data: any[] }> {
-    return fetchWithCache('/api/products/nomenclatures', 'products_nomenclatures');
+    return fetchApi('/api/products/nomenclatures');
   },
 };
 

@@ -13,7 +13,7 @@ export interface Country {
   iso3: string;
   region: string;
   subregion: string;
-  coordinates: [number, number]; // [lng, lat]
+  coordinates?: [number, number]; // [lng, lat], omitted when unknown
   flag: string;
 }
 

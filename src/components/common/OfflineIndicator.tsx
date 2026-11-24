@@ -10,7 +10,7 @@ export const OfflineIndicator: React.FC = () => {
   return (
     <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-md bg-amber-500/90 backdrop-blur-xs px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-lg border border-amber-400">
       <WifiOff className="w-3.5 h-3.5" />
-      <span>Mode hors-ligne — Données locales en cache</span>
+      <span>Mode hors-ligne — Les données API ne sont pas disponibles</span>
     </div>
   );
 };

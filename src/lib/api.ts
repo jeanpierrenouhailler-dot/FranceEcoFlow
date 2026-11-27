@@ -21,11 +21,45 @@ import {
 } from '../types/index.ts';
 
 
-async function fetchApi<T>(url: string): Promise<T> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error ${response.status}`);
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  isUnavailable: boolean;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.isUnavailable = status === 503 || status === 409 || code === 'NOT_AVAILABLE' || code === 'UNVERIFIED';
   }
+}
+
+async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init);
+  const contentType = response.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+
+  if (!response.ok) {
+    if (isJson) {
+      const payload = await response.json().catch(() => null);
+      const message =
+        (payload && typeof payload.error === 'string' && payload.error) ||
+        `HTTP error ${response.status}`;
+      const code = payload && typeof payload.status === 'string' ? payload.status : undefined;
+      throw new ApiError(message, response.status, code);
+    }
+    throw new ApiError(`HTTP error ${response.status}`, response.status);
+  }
+
+  if (!isJson) {
+    throw new ApiError(
+      'Le service API ne répond pas en JSON (fallback HTML ou serveur API inactif).',
+      503,
+      'NOT_AVAILABLE'
+    );
+  }
+
   return response.json();
 }
 
@@ -161,8 +195,7 @@ export const api = {
   },
 
   async triggerIngestion(): Promise<any> {
-    const res = await fetch('/api/sources/ingest', { method: 'POST' });
-    return res.json();
+    return fetchApi('/api/sources/ingest', { method: 'POST' });
   },
 
   async resolveNC8Product(code: string): Promise<{ data: any }> {

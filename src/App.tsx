@@ -12,7 +12,7 @@ import {
   Source,
   Dataset,
 } from './types/index.ts';
-import { api, FlowParams } from './lib/api.ts';
+import { api, ApiError, FlowParams } from './lib/api.ts';
 import { useUrlParams } from './hooks/useUrlParams.ts';
 import { Header, ActiveTab } from './components/common/Header.tsx';
 import { OfflineIndicator } from './components/common/OfflineIndicator.tsx';
@@ -80,7 +80,14 @@ export default function App() {
         }
         if (aRes.status === 'fulfilled') setAnomalies(aRes.value.data);
         [cRes, pRes, iRes, rRes, sRes, aRes].forEach((result) => {
-          if (result.status === 'rejected') console.error('Base reference request failed:', result.reason);
+          if (result.status === 'rejected') {
+            const reason = result.reason;
+            if (reason instanceof ApiError && reason.isUnavailable) {
+              console.warn('Reference data unavailable:', reason.message);
+            } else {
+              console.error('Base reference request failed:', reason);
+            }
+          }
         });
       });
   }, []);
@@ -106,7 +113,11 @@ export default function App() {
       })
       .catch((err) => {
         if (isCancelled) return;
-        console.error('Failed to load flow data:', err);
+        if (err instanceof ApiError && err.isUnavailable) {
+          console.warn('Flow dataset unavailable:', err.message);
+        } else {
+          console.error('Failed to load flow data:', err);
+        }
         setFlowError('Les flux ne sont pas disponibles : aucune donnée dont la provenance est vérifiée n’est publiée.');
         setLoading(false);
       });

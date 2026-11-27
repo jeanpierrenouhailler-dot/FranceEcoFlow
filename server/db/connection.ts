@@ -79,10 +79,17 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
+export class DatabaseUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DatabaseUnavailableError';
+  }
+}
+
 export async function executeQuery<T extends pg.QueryResultRow = any>(text: string, params?: any[]): Promise<pg.QueryResult<T>> {
   queriesCount++;
   if (!pool || !isRealPostgresConnected) {
-    throw new Error(lastConnectionError || 'PostgreSQL/PostGIS is not connected.');
+    throw new DatabaseUnavailableError(lastConnectionError || 'PostgreSQL/PostGIS is not connected.');
   }
 
   try {

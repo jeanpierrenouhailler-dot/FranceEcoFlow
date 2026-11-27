@@ -66,6 +66,11 @@ async function startServer() {
     });
   });
 
+  // Never fall through to SPA HTML for unmatched /api/* endpoints
+  app.use('/api', (_req: Request, res: Response) => {
+    res.status(404).json({ error: 'API endpoint not found.' });
+  });
+
   // Client handling
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
@@ -98,7 +103,10 @@ async function startServer() {
   } else {
     const distPath = path.resolve(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req: Request, res: Response) => {
+    app.get('*', (req: Request, res: Response) => {
+      if (req.originalUrl.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found.' });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

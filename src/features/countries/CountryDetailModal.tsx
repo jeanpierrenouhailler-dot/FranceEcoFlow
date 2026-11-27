@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Country, FlowAnalysisSummary, SupplierSummary, TimeseriesPoint, TransportRoute, Infrastructure } from '../../types/index.ts';
-import { api } from '../../lib/api.ts';
+import { api, ApiError } from '../../lib/api.ts';
 import { MetricCard } from '../../components/common/MetricCard.tsx';
 import { TimeseriesChart } from '../../components/charts/TimeseriesChart.tsx';
 import { ConfidenceBadge } from '../../components/common/ConfidenceBadge.tsx';
@@ -38,7 +38,11 @@ export const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Error fetching country detail:', err);
+        if (err instanceof ApiError && err.isUnavailable) {
+          console.warn('Country detail unavailable:', err.message);
+        } else {
+          console.error('Error fetching country detail:', err);
+        }
         setLoading(false);
       });
   }, [countryId]);

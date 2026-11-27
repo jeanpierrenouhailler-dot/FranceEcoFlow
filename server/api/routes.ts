@@ -17,7 +17,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getDatabaseStatus } from '../db/connection.ts';
+import { DatabaseUnavailableError, getDatabaseStatus } from '../db/connection.ts';
 import { dbRepository } from '../db/repository.ts';
 import { sourceRegistry } from '../ingestion/sources/index.ts';
 import { resolveProductFromNC8, getSupportedNomenclatures } from '../normalization/products.ts';
@@ -32,6 +32,10 @@ const projectRoot = path.resolve(__dirname, '../..');
 const router = Router();
 
 function logApiFailure(operation: string, error: unknown): void {
+  if (error instanceof DatabaseUnavailableError) {
+    console.warn(`[API] ${operation} unavailable: PostgreSQL/PostGIS is not connected.`);
+    return;
+  }
   const errorName = error instanceof Error ? error.name : 'UnknownError';
   console.error(`[API] ${operation} failed (${errorName}).`);
 }
@@ -482,7 +486,8 @@ router.get('/database/spatial/within', async (req: Request, res: Response) => {
     });
   } catch (err) {
     logApiFailure('run spatial query', err);
-    res.status(500).json({ error: 'Spatial query failed' });
+    const status = err instanceof DatabaseUnavailableError ? 503 : 500;
+    res.status(status).json({ error: status === 503 ? 'Spatial database is unavailable' : 'Spatial query failed' });
   }
 });
 

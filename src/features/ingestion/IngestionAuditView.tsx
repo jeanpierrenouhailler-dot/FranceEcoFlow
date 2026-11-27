@@ -8,7 +8,7 @@ import {
   EnergyObservation,
   Infrastructure,
 } from '../../types/index.ts';
-import { api } from '../../lib/api.ts';
+import { api, ApiError } from '../../lib/api.ts';
 import {
   ShieldCheck,
   FileSpreadsheet,
@@ -88,7 +88,14 @@ export const IngestionAuditView: React.FC = () => {
         }
         [repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, infraRes]
           .forEach((result) => {
-            if (result.status === 'rejected') console.error('Audit data request failed:', result.reason);
+            if (result.status === 'rejected') {
+              const reason = result.reason;
+              if (reason instanceof ApiError && reason.isUnavailable) {
+                console.warn('Audit endpoint unavailable:', reason.message);
+              } else {
+                console.error('Audit data request failed:', reason);
+              }
+            }
           });
         setLoading(false);
       })

@@ -54,26 +54,30 @@ export function getHHIInterpretation(hhi: number): {
     return {
       level: 'FAIBLE',
       color: 'text-emerald-400 border-emerald-800 bg-emerald-950/40',
-      description: 'Marché d’approvisionnement très diversifié (HHI < 1 000). Risque géopolitique de dépendance limité.',
+      description:
+        'Marché d’approvisionnement très diversifié (HHI < 1 000). Risque géopolitique de dépendance limité.',
     };
   }
   if (hhi < 1800) {
     return {
       level: 'MODÉRÉE',
       color: 'text-cyan-400 border-cyan-800 bg-cyan-950/40',
-      description: 'Concentration modérée (1 000 ≤ HHI < 1 800). Portefeuille de fournisseurs équilibré.',
+      description:
+        'Concentration modérée (1 000 ≤ HHI < 1 800). Portefeuille de fournisseurs équilibré.',
     };
   }
   if (hhi < 2500) {
     return {
       level: 'ÉLEVÉE',
       color: 'text-amber-400 border-amber-800 bg-amber-950/40',
-      description: 'Forte concentration (1 800 ≤ HHI < 2 500). Vulnérabilité accrue en cas de perturbation sur les deux premiers fournisseurs.',
+      description:
+        'Forte concentration (1 800 ≤ HHI < 2 500). Vulnérabilité accrue en cas de perturbation sur les deux premiers fournisseurs.',
     };
   }
   return {
     level: 'TRÈS ÉLEVÉE',
     color: 'text-rose-400 border-rose-800 bg-rose-950/40',
-    description: 'Concentration extrême (HHI ≥ 2 500). Dépendance critique envers un ou deux acteurs dominants.',
+    description:
+      'Concentration extrême (HHI ≥ 2 500). Dépendance critique envers un ou deux acteurs dominants.',
   };
 }

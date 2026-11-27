@@ -7,9 +7,13 @@ export async function initializeDatabase(): Promise<void> {
   if (!connected) {
     const message = getDatabaseStatus().lastError || 'PostgreSQL/PostGIS is unavailable.';
     if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Production startup requires a working PostgreSQL/PostGIS connection: ${message}`);
+      throw new Error(
+        `Production startup requires a working PostgreSQL/PostGIS connection: ${message}`,
+      );
     }
-    console.warn(`[Database] PostgreSQL/PostGIS unavailable; database-backed APIs will fail explicitly: ${message}`);
+    console.warn(
+      `[Database] PostgreSQL/PostGIS unavailable; database-backed APIs will fail explicitly: ${message}`,
+    );
     return;
   }
 
@@ -19,4 +23,3 @@ export async function initializeDatabase(): Promise<void> {
   }
   console.log(`[Database] ${migrationRes.message}`);
 }
-

@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Country, FlowAnalysisSummary, SupplierSummary, TimeseriesPoint, TransportRoute, Infrastructure } from '../../types/index.ts';
+import {
+  Country,
+  FlowAnalysisSummary,
+  SupplierSummary,
+  TimeseriesPoint,
+  TransportRoute,
+  Infrastructure,
+} from '../../types/index.ts';
 import { api, ApiError } from '../../lib/api.ts';
 import { MetricCard } from '../../components/common/MetricCard.tsx';
 import { TimeseriesChart } from '../../components/charts/TimeseriesChart.tsx';
 import { ConfidenceBadge } from '../../components/common/ConfidenceBadge.tsx';
 import { SourceCitation } from '../../components/common/SourceCitation.tsx';
 import { formatCurrencyEur, formatTonnes, formatPricePerTonne } from '../../lib/calculations.ts';
-import { X, Navigation, Anchor, ExternalLink } from 'lucide-react';
+import { X, Navigation, Anchor } from 'lucide-react';
 
 interface CountryDetailModalProps {
   countryId: string | null;
@@ -62,7 +69,8 @@ export const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
                 <span className="text-xs font-mono text-slate-400">({data?.country.iso3})</span>
               </h2>
               <span className="text-xs text-slate-400">
-                Fiche pays partenaire commercial · {data?.country.region} ({data?.country.subregion})
+                Fiche pays partenaire commercial · {data?.country.region} ({data?.country.subregion}
+                )
               </span>
             </div>
           </div>
@@ -153,7 +161,8 @@ export const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
                 ))
               ) : (
                 <p className="text-xs text-slate-400">
-                  Aucun itinéraire logistique spécifique n'a été formellement consigné pour ce pays. Les flux observés relèvent de la déclaration statistique d'origine.
+                  Aucun itinéraire logistique spécifique n'a été formellement consigné pour ce pays.
+                  Les flux observés relèvent de la déclaration statistique d'origine.
                 </p>
               )}
             </div>

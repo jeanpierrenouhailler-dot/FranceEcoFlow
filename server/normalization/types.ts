@@ -1,5 +1,3 @@
-import { EconomicFlow } from '../../src/types/index.ts';
-
 export interface RawDGDDIRow {
   annee: number;
   mois: number; // 0 for annual, 1-12 for monthly

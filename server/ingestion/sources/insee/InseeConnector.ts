@@ -6,10 +6,15 @@ export class InseeConnector implements SourceConnector<EconomicIndicator> {
   readonly name = 'Institut National de la Statistique et des Études Économiques (INSEE)';
   readonly provider = 'INSEE';
   readonly type = 'api';
-  readonly description = 'Source de référence envisagée : séries macroéconomiques et industrielles de l’INSEE. Extraction live non implémentée.';
+  readonly description =
+    'Source de référence envisagée : séries macroéconomiques et industrielles de l’INSEE. Extraction live non implémentée.';
   readonly officialUrl = 'https://www.insee.fr';
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
   async parse(raw: any[]): Promise<EconomicIndicator[]> {
     const indicators: EconomicIndicator[] = [];
@@ -46,7 +51,15 @@ export class InseeConnector implements SourceConnector<EconomicIndicator> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<EconomicIndicator>> {
     const start = Date.now();

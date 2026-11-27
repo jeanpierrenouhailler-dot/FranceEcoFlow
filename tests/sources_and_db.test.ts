@@ -10,8 +10,21 @@ describe('Production source and database safeguards', () => {
     const connectors = sourceRegistry.getAllConnectors();
     assert.equal(connectors.length, 9);
 
-    const expectedIds = ['dgddi', 'insee', 'eurostat', 'comtrade', 'jodi', 'eia', 'sdes', 'osm', 'ign'];
-    assert.deepEqual(connectors.map((connector) => connector.id), expectedIds);
+    const expectedIds = [
+      'dgddi',
+      'insee',
+      'eurostat',
+      'comtrade',
+      'jodi',
+      'eia',
+      'sdes',
+      'osm',
+      'ign',
+    ];
+    assert.deepEqual(
+      connectors.map((connector) => connector.id),
+      expectedIds,
+    );
   });
 
   test('Ingestion registry never exposes synthetic connector observations', async () => {
@@ -45,7 +58,7 @@ describe('Production source and database safeguards', () => {
   test('Database repository propagates unavailable-connection errors', async () => {
     await assert.rejects(
       dbRepository.findTransportRoutes(),
-      /DATABASE_URL is not configured|PostgreSQL\/PostGIS is not connected/
+      /DATABASE_URL is not configured|PostgreSQL\/PostGIS is not connected/,
     );
   });
 

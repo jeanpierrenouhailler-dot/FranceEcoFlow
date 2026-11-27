@@ -40,7 +40,8 @@ function mapInfrastructureRow(row: any): SpatialInfrastructureResult {
     countryId: row.country_id,
     operator: row.operator,
     coordinates: [Number(row.longitude), Number(row.latitude)],
-    capacityAnnualTonnes: row.capacity_annual_tonnes == null ? undefined : Number(row.capacity_annual_tonnes),
+    capacityAnnualTonnes:
+      row.capacity_annual_tonnes == null ? undefined : Number(row.capacity_annual_tonnes),
     currentStatus: row.current_status,
     osmId: row.osm_id || undefined,
     confidence: row.confidence,
@@ -72,7 +73,8 @@ export const dbRepository = {
       conditions.push(sql.replace('?', `$${params.length}`));
     };
 
-    if (filter.reporterCountryId) addCondition('f.reporter_country_id = ?', filter.reporterCountryId);
+    if (filter.reporterCountryId)
+      addCondition('f.reporter_country_id = ?', filter.reporterCountryId);
     if (filter.flowType) addCondition('f.flow_type = ?', filter.flowType);
     if (filter.productId) addCondition('f.product_id = ?', filter.productId);
     if (filter.startYear !== undefined) addCondition('f.period_year >= ?', filter.startYear);
@@ -93,7 +95,7 @@ export const dbRepository = {
        JOIN raw_files rf ON rf.id = p.raw_file_id
        WHERE ${conditions.join(' AND ')}
        ORDER BY f.period_year, f.period_month, f.partner_country_id, f.id;`,
-      params
+      params,
     );
 
     return result.rows.map((row: any) => ({
@@ -119,7 +121,7 @@ export const dbRepository = {
   async findInfrastructuresWithinRadius(
     centerLng: number,
     centerLat: number,
-    radiusKm: number
+    radiusKm: number,
   ): Promise<SpatialInfrastructureResult[]> {
     const result = await executeQuery(
       `SELECT id, name, type, country_id, operator, capacity_annual_tonnes, current_status,
@@ -130,7 +132,7 @@ export const dbRepository = {
        FROM infrastructures
        WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3 * 1000)
        ORDER BY distance_km ASC;`,
-      [centerLng, centerLat, radiusKm]
+      [centerLng, centerLat, radiusKm],
     );
 
     return result.rows.map(mapInfrastructureRow);
@@ -144,7 +146,7 @@ export const dbRepository = {
               ST_Y(ST_PointOnSurface(geom)) AS latitude
        FROM infrastructures${type ? ' WHERE type = $1' : ''}
        ORDER BY name;`,
-      type ? [type] : undefined
+      type ? [type] : undefined,
     );
     return result.rows.map(mapInfrastructureRow);
   },
@@ -156,7 +158,7 @@ export const dbRepository = {
               ST_X(ST_PointOnSurface(geom)) AS longitude,
               ST_Y(ST_PointOnSurface(geom)) AS latitude
        FROM infrastructures WHERE id = $1;`,
-      [id]
+      [id],
     );
     return result.rows[0] ? mapInfrastructureRow(result.rows[0]) : undefined;
   },
@@ -165,7 +167,7 @@ export const dbRepository = {
     const result = await executeQuery(
       `SELECT id, source_partner_id, destination_reporter_id, product_id, mode,
               ST_AsGeoJSON(geom) AS geom_geojson, distance_km, confidence, evidence, source_id
-       FROM transport_routes;`
+       FROM transport_routes;`,
     );
     return result.rows.map((row: any) => ({
       id: row.id,
@@ -185,7 +187,7 @@ export const dbRepository = {
       `SELECT id, indicator_code, provider, period, value, unit, label_fr, series_id, retrieved_at
        FROM economic_indicators${code ? ' WHERE indicator_code = $1' : ''}
        ORDER BY period DESC;`,
-      code ? [code] : undefined
+      code ? [code] : undefined,
     );
     return result.rows.map((row: any) => ({
       id: row.id,
@@ -219,7 +221,7 @@ export const dbRepository = {
           indicator.labelFr,
           indicator.seriesId ?? null,
           indicator.retrievedAt,
-        ]
+        ],
       );
     }
   },
@@ -230,7 +232,7 @@ export const dbRepository = {
               stock_days_net_imports, source_id, created_at
        FROM energy_observations${metric ? ' WHERE flow_metric = $1' : ''}
        ORDER BY period DESC;`,
-      metric ? [metric] : undefined
+      metric ? [metric] : undefined,
     );
     return result.rows.map((row: any) => ({
       id: row.id,
@@ -268,7 +270,7 @@ export const dbRepository = {
           observation.stockDaysNetImports ?? null,
           observation.sourceId,
           observation.createdAt,
-        ]
+        ],
       );
     }
   },

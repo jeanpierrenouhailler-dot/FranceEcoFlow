@@ -6,14 +6,21 @@ export class EiaConnector implements SourceConnector<EconomicFlow> {
   readonly name = 'U.S. Energy Information Administration (EIA)';
   readonly provider = 'U.S. Department of Energy (DOE)';
   readonly type = 'api';
-  readonly description = 'Source de référence envisagée : statistiques énergétiques américaines. Extraction live et valorisation en euros non implémentées.';
+  readonly description =
+    'Source de référence envisagée : statistiques énergétiques américaines. Extraction live et valorisation en euros non implémentées.';
   readonly officialUrl = 'https://www.eia.gov';
 
   private apiKey: string | undefined = process.env.EIA_API_KEY;
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
-  async parse(_raw: any): Promise<EconomicFlow[]> { throw new Error("EIA response valuation is not implemented; no EUR values are inferred."); }
+  async parse(_raw: any): Promise<EconomicFlow[]> {
+    throw new Error('EIA response valuation is not implemented; no EUR values are inferred.');
+  }
 
   async normalize(records: EconomicFlow[]): Promise<EconomicFlow[]> {
     return records.sort((a, b) => b.periodYear - a.periodYear);
@@ -27,7 +34,15 @@ export class EiaConnector implements SourceConnector<EconomicFlow> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<EconomicFlow>> {
     const start = Date.now();

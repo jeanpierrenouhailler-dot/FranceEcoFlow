@@ -62,7 +62,9 @@ export const ConcentrationGauge: React.FC<ConcentrationGaugeProps> = ({ hhi }) =
 
       <div className="mt-2 text-[11px] text-slate-400 leading-normal bg-slate-950/60 p-2.5 rounded border border-slate-800/80">
         <strong className="text-slate-300">Méthodologie HHI : </strong>
-        Calculé par $HHI = \sum (s_i)^2$, où $s_i$ représente la part de chaque pays fournisseur dans le volume total importé. Utilisé par la Commission Européenne et les régulateurs pour évaluer la sécurité d’approvisionnement.
+        Calculé par $HHI = \sum (s_i)^2$, où $s_i$ représente la part de chaque pays fournisseur
+        dans le volume total importé. Utilisé par la Commission Européenne et les régulateurs pour
+        évaluer la sécurité d’approvisionnement.
       </div>
     </div>
   );

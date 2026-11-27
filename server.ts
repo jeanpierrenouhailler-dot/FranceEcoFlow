@@ -27,7 +27,7 @@ async function startServer() {
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean)
-      .map((value) => new URL(value).origin)
+      .map((value) => new URL(value).origin),
   );
 
   // Cross-origin API access is limited to explicitly configured application origins.
@@ -112,7 +112,9 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[FlowExplorer] Server running on http://0.0.0.0:${PORT} (ENV: ${process.env.NODE_ENV || 'development'})`);
+    console.log(
+      `[FlowExplorer] Server running on http://0.0.0.0:${PORT} (ENV: ${process.env.NODE_ENV || 'development'})`,
+    );
   });
 }
 

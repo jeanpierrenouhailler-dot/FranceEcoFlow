@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { SupplierSummary, Infrastructure, TransportRoute } from '../../types/index.ts';
 import { ConfidenceBadge } from '../common/ConfidenceBadge.tsx';
 import { formatCurrencyEur, formatTonnes } from '../../lib/calculations.ts';
-import { Anchor, Factory, Navigation, Layers, Info } from 'lucide-react';
+import { Anchor, Factory, Navigation, Layers } from 'lucide-react';
 
 interface FlowMapProps {
   suppliers: SupplierSummary[];
@@ -63,7 +63,9 @@ export const FlowMap: React.FC<FlowMapProps> = ({
         <button
           onClick={() => setShowRoutes(!showRoutes)}
           className={`px-2 py-1 rounded text-[11px] font-medium transition cursor-pointer flex items-center gap-1 ${
-            showRoutes ? 'bg-cyan-600/30 text-cyan-300 border border-cyan-500/50' : 'bg-slate-800 text-slate-400'
+            showRoutes
+              ? 'bg-cyan-600/30 text-cyan-300 border border-cyan-500/50'
+              : 'bg-slate-800 text-slate-400'
           }`}
         >
           <Navigation className="w-3 h-3" />
@@ -106,12 +108,60 @@ export const FlowMap: React.FC<FlowMapProps> = ({
           className="w-full h-full absolute inset-0 pointer-events-auto"
         >
           {/* Subtle World Map Grid lines */}
-          <line x1="0" y1="25" x2="100" y2="25" stroke="#1e293b" strokeDasharray="1 2" strokeWidth="0.2" />
-          <line x1="0" y1="50" x2="100" y2="50" stroke="#1e293b" strokeDasharray="1 2" strokeWidth="0.2" />
-          <line x1="0" y1="75" x2="100" y2="75" stroke="#1e293b" strokeDasharray="1 2" strokeWidth="0.2" />
-          <line x1="25" y1="0" x2="25" y2="100" stroke="#1e293b" strokeDasharray="1 2" strokeWidth="0.2" />
-          <line x1="50" y1="0" x2="50" y2="100" stroke="#1e293b" strokeDasharray="1 2" strokeWidth="0.2" />
-          <line x1="75" y1="0" x2="75" y2="100" stroke="#1e293b" strokeDasharray="1 2" strokeWidth="0.2" />
+          <line
+            x1="0"
+            y1="25"
+            x2="100"
+            y2="25"
+            stroke="#1e293b"
+            strokeDasharray="1 2"
+            strokeWidth="0.2"
+          />
+          <line
+            x1="0"
+            y1="50"
+            x2="100"
+            y2="50"
+            stroke="#1e293b"
+            strokeDasharray="1 2"
+            strokeWidth="0.2"
+          />
+          <line
+            x1="0"
+            y1="75"
+            x2="100"
+            y2="75"
+            stroke="#1e293b"
+            strokeDasharray="1 2"
+            strokeWidth="0.2"
+          />
+          <line
+            x1="25"
+            y1="0"
+            x2="25"
+            y2="100"
+            stroke="#1e293b"
+            strokeDasharray="1 2"
+            strokeWidth="0.2"
+          />
+          <line
+            x1="50"
+            y1="0"
+            x2="50"
+            y2="100"
+            stroke="#1e293b"
+            strokeDasharray="1 2"
+            strokeWidth="0.2"
+          />
+          <line
+            x1="75"
+            y1="0"
+            x2="75"
+            y2="100"
+            stroke="#1e293b"
+            strokeDasharray="1 2"
+            strokeWidth="0.2"
+          />
 
           {/* Trade Flow Arcs (Curved quadratic bezier from supplier centroid to France) */}
           {suppliers.map((s) => {
@@ -131,10 +181,10 @@ export const FlowMap: React.FC<FlowMapProps> = ({
             const strokeColor = isSelected
               ? '#38bdf8'
               : isHovered
-              ? '#22d3ee'
-              : s.marketSharePercent > 15
-              ? '#06b6d4'
-              : '#0284c7';
+                ? '#22d3ee'
+                : s.marketSharePercent > 15
+                  ? '#06b6d4'
+                  : '#0284c7';
 
             return (
               <g key={s.partnerCountryId} className="cursor-pointer">
@@ -235,8 +285,21 @@ export const FlowMap: React.FC<FlowMapProps> = ({
 
           {/* French Hub Target */}
           <g>
-            <circle cx={francePoint.x} cy={francePoint.y} r="3.5" fill="#38bdf8" fillOpacity="0.2" />
-            <circle cx={francePoint.x} cy={francePoint.y} r="2.0" fill="#0284c7" stroke="#ffffff" strokeWidth="0.4" />
+            <circle
+              cx={francePoint.x}
+              cy={francePoint.y}
+              r="3.5"
+              fill="#38bdf8"
+              fillOpacity="0.2"
+            />
+            <circle
+              cx={francePoint.x}
+              cy={francePoint.y}
+              r="2.0"
+              fill="#0284c7"
+              stroke="#ffffff"
+              strokeWidth="0.4"
+            />
             <text
               x={francePoint.x}
               y={francePoint.y + 4.5}

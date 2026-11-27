@@ -3,7 +3,7 @@ import { Infrastructure } from '../../types/index.ts';
 import { formatTonnes } from '../../lib/calculations.ts';
 import { ConfidenceBadge } from '../../components/common/ConfidenceBadge.tsx';
 import { SourceCitation } from '../../components/common/SourceCitation.tsx';
-import { Anchor, Factory, GitCommit, Layers, ExternalLink } from 'lucide-react';
+import { Anchor, Factory, GitCommit, ExternalLink } from 'lucide-react';
 
 interface InfrastructureDirectoryProps {
   infrastructures: Infrastructure[];
@@ -29,7 +29,8 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
             <span>Infrastructures pétrolières et portuaires françaises</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Aucune infrastructure n’est publiée tant qu’une extraction et sa provenance ne sont pas vérifiées.
+            Aucune infrastructure n’est publiée tant qu’une extraction et sa provenance ne sont pas
+            vérifiées.
           </p>
         </div>
 
@@ -38,7 +39,9 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
           <button
             onClick={() => setFilterType('all')}
             className={`px-3 py-1 rounded transition cursor-pointer ${
-              filterType === 'all' ? 'bg-cyan-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              filterType === 'all'
+                ? 'bg-cyan-600 text-white font-semibold'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Toutes ({infrastructures.length})
@@ -46,7 +49,9 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
           <button
             onClick={() => setFilterType('port')}
             className={`px-3 py-1 rounded transition cursor-pointer ${
-              filterType === 'port' ? 'bg-cyan-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              filterType === 'port'
+                ? 'bg-cyan-600 text-white font-semibold'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Ports & Terminaux
@@ -54,7 +59,9 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
           <button
             onClick={() => setFilterType('refinery')}
             className={`px-3 py-1 rounded transition cursor-pointer ${
-              filterType === 'refinery' ? 'bg-cyan-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              filterType === 'refinery'
+                ? 'bg-cyan-600 text-white font-semibold'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Raffineries
@@ -62,7 +69,9 @@ export const InfrastructureDirectory: React.FC<InfrastructureDirectoryProps> = (
           <button
             onClick={() => setFilterType('pipeline')}
             className={`px-3 py-1 rounded transition cursor-pointer ${
-              filterType === 'pipeline' ? 'bg-cyan-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              filterType === 'pipeline'
+                ? 'bg-cyan-600 text-white font-semibold'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Pipelines

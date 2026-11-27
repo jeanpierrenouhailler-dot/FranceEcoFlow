@@ -1,6 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { ingestAllCustomsData, getIngestedFlows, getAuditReport } from '../server/data/ingestion/index.ts';
+import {
+  ingestAllCustomsData,
+  getIngestedFlows,
+  getAuditReport,
+} from '../server/data/ingestion/index.ts';
 import { runDataQualityChecks } from '../server/data/ingestion/qualityChecker.ts';
 
 describe('Quarantined historical data and provenance checks', () => {
@@ -12,7 +16,10 @@ describe('Quarantined historical data and provenance checks', () => {
     assert.equal(report.overallStatus, 'FAILED');
     assert.equal(files.length, 4);
     assert.ok(files.every((file) => file.provenanceStatus === 'QUARANTINED'));
-    assert.equal(report.checks.find((check) => check.checkId === 'CHECK_DATASET_PROVENANCE')?.status, 'FAILED');
+    assert.equal(
+      report.checks.find((check) => check.checkId === 'CHECK_DATASET_PROVENANCE')?.status,
+      'FAILED',
+    );
   });
 
   test('Public ingestion accessors do not expose quarantined values', () => {

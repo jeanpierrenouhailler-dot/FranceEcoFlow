@@ -1,5 +1,3 @@
-import { Product, ProductCategory, ProductClassification } from '../../src/types/index.ts';
-
 export interface ProductResolutionResult {
   productId: string;
   productName: string;
@@ -143,22 +141,22 @@ export function resolveProductFromNC8(nc8Input: string): ProductResolutionResult
       match.categoryId === 'energy_hydrocarbons'
         ? 'Hydrocarbures & Pétrole'
         : match.categoryId === 'energy_gas'
-        ? 'Gaz naturel & GNL'
-        : 'Autres';
+          ? 'Gaz naturel & GNL'
+          : 'Autres';
 
     const productName =
       match.productId === 'crude_oil'
         ? 'Crude petroleum'
         : match.productId === 'refined_fuels'
-        ? 'Refined petroleum products'
-        : 'Liquefied Natural Gas (LNG)';
+          ? 'Refined petroleum products'
+          : 'Liquefied Natural Gas (LNG)';
 
     const productNameFr =
       match.productId === 'crude_oil'
         ? 'Pétrole brut'
         : match.productId === 'refined_fuels'
-        ? 'Produits pétroliers raffinés'
-        : 'Gaz Naturel Liquéfié (GNL)';
+          ? 'Produits pétroliers raffinés'
+          : 'Gaz Naturel Liquéfié (GNL)';
 
     return {
       productId: match.productId,

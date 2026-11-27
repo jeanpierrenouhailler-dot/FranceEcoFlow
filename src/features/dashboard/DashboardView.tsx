@@ -5,7 +5,7 @@ import { ConcentrationGauge } from '../../components/charts/ConcentrationGauge.t
 import { PartnerBarChart } from '../../components/charts/PartnerBarChart.tsx';
 import { SourceCitation } from '../../components/common/SourceCitation.tsx';
 import { formatCurrencyEur, formatTonnes, formatPricePerTonne } from '../../lib/calculations.ts';
-import { ArrowRight, AlertTriangle, TrendingUp, Compass, Anchor } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Compass, Anchor } from 'lucide-react';
 
 interface DashboardViewProps {
   summary: FlowAnalysisSummary;
@@ -38,7 +38,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Exploration des flux économiques et approvisionnements stratégiques de la France
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Les flux commerciaux, infrastructures et routes ne sont pas publiés tant que leurs données et leur provenance n’ont pas été vérifiées.
+            Les flux commerciaux, infrastructures et routes ne sont pas publiés tant que leurs
+            données et leur provenance n’ont pas été vérifiées.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
@@ -114,9 +115,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-bold text-white">
-            Variations structurelles détectées
-          </h3>
+          <h3 className="text-sm font-bold text-white">Variations structurelles détectées</h3>
           <span className="text-xs text-slate-500 font-mono ml-auto">
             Algorithme de détection statistique
           </span>
@@ -143,7 +142,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <p className="text-slate-300 leading-relaxed">{anom.observation}</p>
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
                 <span className="font-mono">Période : {anom.period}</span>
-                <span className="font-mono text-cyan-400">Source : {anom.sourceId.toUpperCase()}</span>
+                <span className="font-mono text-cyan-400">
+                  Source : {anom.sourceId.toUpperCase()}
+                </span>
               </div>
             </div>
           ))}

@@ -71,7 +71,10 @@ export function importRawDGDDIFile(filePath?: string): RawImportResult {
   };
 }
 
-export async function persistRawDGDDIRowsToStaging(rows: RawDGDDIRow[], checksum: string): Promise<void> {
+export async function persistRawDGDDIRowsToStaging(
+  rows: RawDGDDIRow[],
+  checksum: string,
+): Promise<void> {
   if (!isDatasetVerified('server/ingestion/raw/dgddi_dau_2015_2026.csv')) {
     throw new Error('Refusing to persist a DGDDI file whose provenance is not verified.');
   }

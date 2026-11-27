@@ -29,10 +29,10 @@ export function loadDGDDIAnnualFile(filePath: string): {
     const flowType = cols[1] === 'export' ? 'export' : 'import';
     const reporterCountryId = cols[2]; // 'FR'
     const partnerCountryId = cols[3]; // 'KZ', 'US', etc.
-    const productCode = cols[4]; // 27090090
+    const _productCode = cols[4]; // 27090090
     const valueCafEur = parseFloat(cols[5]);
     const netMassKg = parseFloat(cols[6]);
-    const sourceProvider = cols[7] || 'DGDDI';
+    const _sourceProvider = cols[7] || 'DGDDI';
 
     if (isNaN(year) || isNaN(valueCafEur) || isNaN(netMassKg) || netMassKg <= 0) {
       continue;
@@ -94,10 +94,10 @@ export function loadDGDDIMonthlyFile(filePath: string): {
     const flowType = cols[2] === 'export' ? 'export' : 'import';
     const reporterCountryId = cols[3]; // 'FR'
     const partnerCountryId = cols[4];
-    const productCode = cols[5];
+    const _productCode = cols[5];
     const valueCafEur = parseFloat(cols[6]);
     const netMassKg = parseFloat(cols[7]);
-    const sourceProvider = cols[8] || 'DGDDI';
+    const _sourceProvider = cols[8] || 'DGDDI';
 
     if (isNaN(year) || isNaN(month) || isNaN(valueCafEur) || isNaN(netMassKg) || netMassKg <= 0) {
       continue;

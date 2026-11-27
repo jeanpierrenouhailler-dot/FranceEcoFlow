@@ -76,7 +76,8 @@ export const FlowsTable: React.FC<FlowsTableProps> = ({
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
 
   const exportTableCsv = () => {
-    const header = 'Rang;Code;Pays;Région;Volume (Tonnes);Part (%);Valeur (Euros);Prix Implicite (EUR/t);Niveau Confiance\n';
+    const header =
+      'Rang;Code;Pays;Région;Volume (Tonnes);Part (%);Valeur (Euros);Prix Implicite (EUR/t);Niveau Confiance\n';
     const rows = sorted
       .map((s) =>
         [
@@ -89,7 +90,7 @@ export const FlowsTable: React.FC<FlowsTableProps> = ({
           s.totalValueEur,
           s.implicitPriceEurPerTonne,
           s.confidence,
-        ].join(';')
+        ].join(';'),
       )
       .join('\n');
 
@@ -203,9 +204,7 @@ export const FlowsTable: React.FC<FlowsTableProps> = ({
                 onClick={() => onSelectPartner?.(s.partnerCountryId)}
                 className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
               >
-                <td className="py-2.5 px-3 text-slate-500 font-semibold tabular-nums">
-                  #{s.rank}
-                </td>
+                <td className="py-2.5 px-3 text-slate-500 font-semibold tabular-nums">#{s.rank}</td>
                 <td className="py-2.5 px-3 font-sans">
                   <div className="flex items-center gap-2">
                     <span className="text-base">{s.country.flag}</span>
@@ -247,7 +246,8 @@ export const FlowsTable: React.FC<FlowsTableProps> = ({
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-3 text-xs text-slate-400">
           <span>
-            Affichage de {(page - 1) * pageSize + 1} à {Math.min(page * pageSize, sorted.length)} sur {sorted.length} partenaires
+            Affichage de {(page - 1) * pageSize + 1} à {Math.min(page * pageSize, sorted.length)}{' '}
+            sur {sorted.length} partenaires
           </span>
           <div className="flex items-center gap-1">
             <button

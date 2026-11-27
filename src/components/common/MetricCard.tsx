@@ -51,8 +51,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           <div className="flex items-center gap-1 font-mono text-[12px]">
             {isPositive && (
               <span className="flex items-center text-emerald-400 font-semibold">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                +{variation.toFixed(1)}%
+                <ArrowUpRight className="w-3.5 h-3.5" />+{variation.toFixed(1)}%
               </span>
             )}
             {isNegative && (

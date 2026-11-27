@@ -1,5 +1,3 @@
-import { EconomicFlow, ConfidenceLevel } from '../../../src/types/index.ts';
-
 export interface RawCustomsRecord {
   year: number;
   month?: number;

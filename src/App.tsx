@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import {
   Country,
   Product,
@@ -12,21 +12,56 @@ import {
   Source,
   Dataset,
 } from './types/index.ts';
-import { api, ApiError, FlowParams } from './lib/api.ts';
+import { api, ApiError } from './lib/api.ts';
 import { useUrlParams } from './hooks/useUrlParams.ts';
 import { Header, ActiveTab } from './components/common/Header.tsx';
 import { OfflineIndicator } from './components/common/OfflineIndicator.tsx';
-import { DashboardView } from './features/dashboard/DashboardView.tsx';
-import { ExplorerView } from './features/explorer/ExplorerView.tsx';
-import { CountriesDirectory } from './features/countries/CountriesDirectory.tsx';
-import { InfrastructureDirectory } from './features/infrastructures/InfrastructureDirectory.tsx';
-import { MethodologyView } from './features/methodology/MethodologyView.tsx';
-import { SourcesView } from './features/sources/SourcesView.tsx';
-import { IngestionAuditView } from './features/ingestion/IngestionAuditView.tsx';
-import { ExportModal } from './features/export/ExportModal.tsx';
-import { FlowMap } from './components/map/FlowMap.tsx';
 import { Language } from './i18n/index.ts';
 import { Loader2 } from 'lucide-react';
+
+// Vues chargées à la demande (code-splitting) : chaque onglet et la carte
+// deviennent un chunk distinct, ce qui réduit fortement le bundle initial.
+const DashboardView = lazy(() =>
+  import('./features/dashboard/DashboardView.tsx').then((m) => ({ default: m.DashboardView })),
+);
+const ExplorerView = lazy(() =>
+  import('./features/explorer/ExplorerView.tsx').then((m) => ({ default: m.ExplorerView })),
+);
+const CountriesDirectory = lazy(() =>
+  import('./features/countries/CountriesDirectory.tsx').then((m) => ({
+    default: m.CountriesDirectory,
+  })),
+);
+const InfrastructureDirectory = lazy(() =>
+  import('./features/infrastructures/InfrastructureDirectory.tsx').then((m) => ({
+    default: m.InfrastructureDirectory,
+  })),
+);
+const MethodologyView = lazy(() =>
+  import('./features/methodology/MethodologyView.tsx').then((m) => ({
+    default: m.MethodologyView,
+  })),
+);
+const SourcesView = lazy(() =>
+  import('./features/sources/SourcesView.tsx').then((m) => ({ default: m.SourcesView })),
+);
+const IngestionAuditView = lazy(() =>
+  import('./features/ingestion/IngestionAuditView.tsx').then((m) => ({
+    default: m.IngestionAuditView,
+  })),
+);
+const ExportModal = lazy(() =>
+  import('./features/export/ExportModal.tsx').then((m) => ({ default: m.ExportModal })),
+);
+const FlowMap = lazy(() =>
+  import('./components/map/FlowMap.tsx').then((m) => ({ default: m.FlowMap })),
+);
+
+const ViewFallback = (
+  <div className="h-96 flex items-center justify-center text-slate-500">
+    <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+  </div>
+);
 
 export default function App() {
   const [lang, setLang] = useState<Language>('fr');
@@ -68,28 +103,27 @@ export default function App() {
       api.getTransportRoutes(),
       api.getSources(),
       api.getAnomalies('crude_oil'),
-    ])
-      .then(([cRes, pRes, iRes, rRes, sRes, aRes]) => {
-        if (cRes.status === 'fulfilled') setCountries(cRes.value.data);
-        if (pRes.status === 'fulfilled') setProducts(pRes.value.data);
-        if (iRes.status === 'fulfilled') setInfrastructures(iRes.value.data);
-        if (rRes.status === 'fulfilled') setRoutes(rRes.value.data);
-        if (sRes.status === 'fulfilled') {
-          setSources(sRes.value.sources);
-          setDatasets(sRes.value.datasets);
-        }
-        if (aRes.status === 'fulfilled') setAnomalies(aRes.value.data);
-        [cRes, pRes, iRes, rRes, sRes, aRes].forEach((result) => {
-          if (result.status === 'rejected') {
-            const reason = result.reason;
-            if (reason instanceof ApiError && reason.isUnavailable) {
-              console.warn('Reference data unavailable:', reason.message);
-            } else {
-              console.error('Base reference request failed:', reason);
-            }
+    ]).then(([cRes, pRes, iRes, rRes, sRes, aRes]) => {
+      if (cRes.status === 'fulfilled') setCountries(cRes.value.data);
+      if (pRes.status === 'fulfilled') setProducts(pRes.value.data);
+      if (iRes.status === 'fulfilled') setInfrastructures(iRes.value.data);
+      if (rRes.status === 'fulfilled') setRoutes(rRes.value.data);
+      if (sRes.status === 'fulfilled') {
+        setSources(sRes.value.sources);
+        setDatasets(sRes.value.datasets);
+      }
+      if (aRes.status === 'fulfilled') setAnomalies(aRes.value.data);
+      [cRes, pRes, iRes, rRes, sRes, aRes].forEach((result) => {
+        if (result.status === 'rejected') {
+          const reason = result.reason;
+          if (reason instanceof ApiError && reason.isUnavailable) {
+            console.warn('Reference data unavailable:', reason.message);
+          } else {
+            console.error('Base reference request failed:', reason);
           }
-        });
+        }
       });
+    });
   }, []);
 
   // Fetch dynamic flows whenever params change
@@ -118,7 +152,9 @@ export default function App() {
         } else {
           console.error('Failed to load flow data:', err);
         }
-        setFlowError('Les flux ne sont pas disponibles : aucune donnée dont la provenance est vérifiée n’est publiée.');
+        setFlowError(
+          'Les flux ne sont pas disponibles : aucune donnée dont la provenance est vérifiée n’est publiée.',
+        );
         setLoading(false);
       });
 
@@ -154,95 +190,95 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
-        {loading && !summary && ['dashboard', 'explorer', 'map', 'countries'].includes(activeTab) ? (
+        {loading &&
+        !summary &&
+        ['dashboard', 'explorer', 'map', 'countries'].includes(activeTab) ? (
           <div className="h-96 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-            <span className="text-xs font-mono">
-              Vérification de la disponibilité des flux...
-            </span>
+            <span className="text-xs font-mono">Vérification de la disponibilité des flux...</span>
           </div>
         ) : (
-          <>
-            {(!summary || !sankey) && ['dashboard', 'explorer', 'map', 'countries'].includes(activeTab) && (
-              <div className="p-6 rounded-lg bg-amber-950/30 border border-amber-800 text-amber-200 text-sm">
-                {flowError || 'Les données de flux ne sont pas disponibles.'}
-                <p className="mt-2 text-xs text-amber-100/80">
-                  Les sources et l’ingestion restent consultables ; les données non vérifiées ne sont pas affichées.
-                </p>
-              </div>
-            )}
-            {summary && sankey && activeTab === 'dashboard' && (
-              <DashboardView
-                summary={summary}
-                suppliers={suppliers}
-                anomalies={anomalies}
-                onExplore={() => setActiveTab('explorer')}
-                onSelectPartner={(pId) => {
-                  updateParams({ partner: pId });
-                  setActiveTab('explorer');
-                }}
-                onOpenMap={() => setActiveTab('map')}
-              />
-            )}
-
-            {summary && sankey && activeTab === 'explorer' && (
-              <ExplorerView
-                params={params}
-                onUpdateParams={updateParams}
-                onResetFilters={handleResetFilters}
-                countries={countries}
-                products={products}
-                infrastructures={infrastructures}
-                routes={routes}
-                summary={summary}
-                suppliers={suppliers}
-                timeseries={timeseries}
-                sankey={sankey}
-                onSelectPartner={(pId) => updateParams({ partner: pId })}
-                onSelectInfrastructure={() => setActiveTab('infrastructures')}
-              />
-            )}
-
-            {summary && sankey && activeTab === 'map' && (
-              <div className="space-y-4">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-xl font-bold text-white">
-                    Carte géospatiale des flux et infrastructures maritimes
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Visualisation cartographique des flux statistiques d'importation et des corridors maritimes vers les terminaux français.
-                  </p>
-                </div>
-                <FlowMap
+          <Suspense fallback={ViewFallback}>
+            <>
+              {(!summary || !sankey) &&
+                ['dashboard', 'explorer', 'map', 'countries'].includes(activeTab) && (
+                  <div className="p-6 rounded-lg bg-amber-950/30 border border-amber-800 text-amber-200 text-sm">
+                    {flowError || 'Les données de flux ne sont pas disponibles.'}
+                    <p className="mt-2 text-xs text-amber-100/80">
+                      Les sources et l’ingestion restent consultables ; les données non vérifiées ne
+                      sont pas affichées.
+                    </p>
+                  </div>
+                )}
+              {summary && sankey && activeTab === 'dashboard' && (
+                <DashboardView
+                  summary={summary}
                   suppliers={suppliers}
+                  anomalies={anomalies}
+                  onExplore={() => setActiveTab('explorer')}
+                  onSelectPartner={(pId) => {
+                    updateParams({ partner: pId });
+                    setActiveTab('explorer');
+                  }}
+                  onOpenMap={() => setActiveTab('map')}
+                />
+              )}
+
+              {summary && sankey && activeTab === 'explorer' && (
+                <ExplorerView
+                  params={params}
+                  onUpdateParams={updateParams}
+                  onResetFilters={handleResetFilters}
+                  countries={countries}
+                  products={products}
                   infrastructures={infrastructures}
                   routes={routes}
-                  selectedPartnerId={params.partner}
+                  summary={summary}
+                  suppliers={suppliers}
+                  timeseries={timeseries}
+                  sankey={sankey}
                   onSelectPartner={(pId) => updateParams({ partner: pId })}
                   onSelectInfrastructure={() => setActiveTab('infrastructures')}
                 />
-              </div>
-            )}
+              )}
 
-            {summary && sankey && activeTab === 'countries' && (
-              <CountriesDirectory
-                suppliers={suppliers}
-                infrastructures={infrastructures}
-              />
-            )}
+              {summary && sankey && activeTab === 'map' && (
+                <div className="space-y-4">
+                  <div className="border-b border-slate-800 pb-3">
+                    <h2 className="text-xl font-bold text-white">
+                      Carte géospatiale des flux et infrastructures maritimes
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Visualisation cartographique des flux statistiques d'importation et des
+                      corridors maritimes vers les terminaux français.
+                    </p>
+                  </div>
+                  <FlowMap
+                    suppliers={suppliers}
+                    infrastructures={infrastructures}
+                    routes={routes}
+                    selectedPartnerId={params.partner}
+                    onSelectPartner={(pId) => updateParams({ partner: pId })}
+                    onSelectInfrastructure={() => setActiveTab('infrastructures')}
+                  />
+                </div>
+              )}
 
-            {activeTab === 'infrastructures' && (
-              <InfrastructureDirectory infrastructures={infrastructures} />
-            )}
+              {summary && sankey && activeTab === 'countries' && (
+                <CountriesDirectory suppliers={suppliers} infrastructures={infrastructures} />
+              )}
 
-            {activeTab === 'methodology' && <MethodologyView />}
+              {activeTab === 'infrastructures' && (
+                <InfrastructureDirectory infrastructures={infrastructures} />
+              )}
 
-            {activeTab === 'sources' && (
-              <SourcesView sources={sources} datasets={datasets} />
-            )}
+              {activeTab === 'methodology' && <MethodologyView />}
 
-            {activeTab === 'ingestion' && <IngestionAuditView />}
-          </>
+              {activeTab === 'sources' && <SourcesView sources={sources} datasets={datasets} />}
+
+              {activeTab === 'ingestion' && <IngestionAuditView />}
+            </>
+          </Suspense>
         )}
       </main>
 
@@ -285,7 +321,6 @@ export default function App() {
               Sources & Lignage
             </button>
             <span>v1.0.0 (MVP)</span>
-
           </div>
         </div>
       </footer>

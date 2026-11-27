@@ -1,4 +1,8 @@
-import { importRawDGDDIFile, persistRawDGDDIRowsToStaging, RawImportResult } from './rawImporter.ts';
+import {
+  importRawDGDDIFile,
+  persistRawDGDDIRowsToStaging,
+  RawImportResult,
+} from './rawImporter.ts';
 import { normalizeDGDDIRows } from '../../normalization/dgddiNormalizer.ts';
 import { EconomicFlow } from '../../../src/types/index.ts';
 import { executeQuery } from '../../db/connection.ts';
@@ -14,7 +18,9 @@ export async function runDGDDIImportJob(): Promise<{
   report: any;
 }> {
   if (!isDatasetVerified(rawDatasetPath)) {
-    throw new Error(`DGDDI dataset is quarantined because its provenance is unverified: ${rawDatasetPath}`);
+    throw new Error(
+      `DGDDI dataset is quarantined because its provenance is unverified: ${rawDatasetPath}`,
+    );
   }
 
   const startTime = Date.now();
@@ -23,7 +29,7 @@ export async function runDGDDIImportJob(): Promise<{
   // 1. Raw extraction & checksum
   const importResult = importRawDGDDIFile();
   console.log(
-    `[DGDDI Job] Read ${importResult.rows.length} raw DAU declarations (SHA-256: ${importResult.checksumSha256.substring(0, 16)}...).`
+    `[DGDDI Job] Read ${importResult.rows.length} raw DAU declarations (SHA-256: ${importResult.checksumSha256.substring(0, 16)}...).`,
   );
 
   // 2. Persist to PostgreSQL Staging table

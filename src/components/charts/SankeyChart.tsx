@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { echarts, ReactEChartsCore } from '../../lib/echarts.ts';
 import { SankeyData } from '../../types/index.ts';
 
 interface SankeyChartProps {
@@ -46,8 +46,8 @@ export const SankeyChart: React.FC<SankeyChartProps> = ({ data, height = '450px'
               node.category === 'reporter'
                 ? '#0284c7'
                 : node.category === 'product'
-                ? '#0d9488'
-                : '#38bdf8',
+                  ? '#0d9488'
+                  : '#38bdf8',
             borderColor: '#0f172a',
             borderWidth: 1,
           },
@@ -72,10 +72,14 @@ export const SankeyChart: React.FC<SankeyChartProps> = ({ data, height = '450px'
   return (
     <div className="w-full bg-slate-900/40 border border-slate-800 rounded-lg p-4">
       <div className="flex items-center justify-between mb-3 text-xs">
-        <span className="font-semibold text-slate-200">Diagramme de Sankey des approvisionnements</span>
-        <span className="text-slate-400 font-mono text-[11px]">Unité : Millions de tonnes (Mt)</span>
+        <span className="font-semibold text-slate-200">
+          Diagramme de Sankey des approvisionnements
+        </span>
+        <span className="text-slate-400 font-mono text-[11px]">
+          Unité : Millions de tonnes (Mt)
+        </span>
       </div>
-      <ReactECharts option={option} style={{ height, width: '100%' }} />
+      <ReactEChartsCore echarts={echarts} option={option} style={{ height, width: '100%' }} />
     </div>
   );
 };

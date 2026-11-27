@@ -18,10 +18,15 @@ export class IgnConnector implements SourceConnector<CartoLayer> {
   readonly name = 'Institut National de l’Information Géographique et Forestière (IGN)';
   readonly provider = 'IGN Géoplateforme (data.geopf.fr)';
   readonly type = 'wmts';
-  readonly description = 'Source géographique de référence envisagée : services cartographiques IGN. Extraction live non implémentée.';
+  readonly description =
+    'Source géographique de référence envisagée : services cartographiques IGN. Extraction live non implémentée.';
   readonly officialUrl = 'https://geoservices.ign.fr';
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
   async parse(raw: any[]): Promise<CartoLayer[]> {
     return raw.map((layer) => ({
@@ -51,7 +56,15 @@ export class IgnConnector implements SourceConnector<CartoLayer> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<CartoLayer>> {
     const start = Date.now();

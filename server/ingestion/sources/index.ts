@@ -96,9 +96,10 @@ export class SourceRegistry {
         } else if (id === 'jodi' || id === 'sdes') {
           await dbRepository.saveEnergyObservations(res.records);
         }
-        const status = res.recordsCount === 0
-          ? 'FAILED'
-          : res.status ?? (res.warnings.length > 0 ? 'PARTIAL' : 'SUCCESS');
+        const status =
+          res.recordsCount === 0
+            ? 'FAILED'
+            : (res.status ?? (res.warnings.length > 0 ? 'PARTIAL' : 'SUCCESS'));
         results[id] = { ...res, status };
         totalRecords += res.recordsCount;
       } catch (err: any) {

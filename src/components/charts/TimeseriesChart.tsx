@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { echarts, ReactEChartsCore } from '../../lib/echarts.ts';
 import { TimeseriesPoint } from '../../types/index.ts';
 
 interface TimeseriesChartProps {
@@ -141,10 +141,12 @@ export const TimeseriesChart: React.FC<TimeseriesChartProps> = ({ data, height =
   return (
     <div className="w-full bg-slate-900/40 border border-slate-800 rounded-lg p-4">
       <div className="flex items-center justify-between mb-3 text-xs">
-        <span className="font-semibold text-slate-200">Évolution annuelle du volume et de la facture d'importation</span>
+        <span className="font-semibold text-slate-200">
+          Évolution annuelle du volume et de la facture d'importation
+        </span>
         <span className="text-slate-400 font-mono text-[11px]">{periodLabel}</span>
       </div>
-      <ReactECharts option={option} style={{ height, width: '100%' }} />
+      <ReactEChartsCore echarts={echarts} option={option} style={{ height, width: '100%' }} />
     </div>
   );
 };

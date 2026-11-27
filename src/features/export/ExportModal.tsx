@@ -32,7 +32,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     if (filters.from !== undefined) query.set('from', String(filters.from));
     if (filters.to !== undefined) query.set('to', String(filters.to));
     const csvUrl = `/api/export?${query.toString()}`;
-    const period = [filters.from, filters.to].filter((year) => year !== undefined).join('_') || 'periode_non_precisee';
+    const period =
+      [filters.from, filters.to].filter((year) => year !== undefined).join('_') ||
+      'periode_non_precisee';
     const a = document.createElement('a');
     a.href = csvUrl;
     a.download = `france_eco_flow_${period}.csv`;
@@ -57,7 +59,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const period = [filters.from, filters.to].filter((year) => year !== undefined).join('_') || 'periode_non_precisee';
+    const period =
+      [filters.from, filters.to].filter((year) => year !== undefined).join('_') ||
+      'periode_non_precisee';
     a.download = `france_eco_flow_${period}.json`;
     a.click();
     URL.revokeObjectURL(url);
@@ -93,15 +97,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Volume total :</span>
-            <span className="text-cyan-400 font-semibold">{formatTonnes(summary.totalQuantityTonnes)}</span>
+            <span className="text-cyan-400 font-semibold">
+              {formatTonnes(summary.totalQuantityTonnes)}
+            </span>
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Facture globale :</span>
-            <span className="text-white font-semibold">{formatCurrencyEur(summary.totalValueEur)}</span>
+            <span className="text-white font-semibold">
+              {formatCurrencyEur(summary.totalValueEur)}
+            </span>
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Prix unitaire moyen :</span>
-            <span className="text-slate-300">{formatPricePerTonne(summary.averageImplicitPriceEurPerTonne)}</span>
+            <span className="text-slate-300">
+              {formatPricePerTonne(summary.averageImplicitPriceEurPerTonne)}
+            </span>
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Partenaires identifiés :</span>
@@ -119,7 +129,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <div className="text-left">
                 <span className="font-semibold block text-slate-200">Exporter au format CSV</span>
-                <span className="text-slate-500 text-[11px]">Format universel compatible Excel / LibreOffice</span>
+                <span className="text-slate-500 text-[11px]">
+                  Format universel compatible Excel / LibreOffice
+                </span>
               </div>
             </div>
             {downloadedFormat === 'CSV' ? (
@@ -136,8 +148,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <div className="flex items-center gap-2.5">
               <FileCode className="w-4 h-4 text-cyan-400" />
               <div className="text-left">
-                <span className="font-semibold block text-slate-200">Fichier de données brutes JSON</span>
-                <span className="text-slate-500 text-[11px]">Structure hiérarchique avec métadonnées et lignage</span>
+                <span className="font-semibold block text-slate-200">
+                  Fichier de données brutes JSON
+                </span>
+                <span className="text-slate-500 text-[11px]">
+                  Structure hiérarchique avec métadonnées et lignage
+                </span>
               </div>
             </div>
             {downloadedFormat === 'JSON' ? (
@@ -155,7 +171,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <Printer className="w-4 h-4 text-amber-400" />
               <div className="text-left">
                 <span className="font-semibold block text-slate-200">Impression & Export PDF</span>
-                <span className="text-slate-500 text-[11px]">Mise en page optimisée pour rapport imprimé ou PDF</span>
+                <span className="text-slate-500 text-[11px]">
+                  Mise en page optimisée pour rapport imprimé ou PDF
+                </span>
               </div>
             </div>
             <Printer className="w-4 h-4 text-slate-400" />

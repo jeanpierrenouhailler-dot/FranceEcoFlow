@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { echarts, ReactEChartsCore } from '../../lib/echarts.ts';
 import { SupplierSummary } from '../../types/index.ts';
 
 interface ImplicitPriceChartProps {
@@ -117,14 +117,16 @@ export const ImplicitPriceChart: React.FC<ImplicitPriceChartProps> = ({
     <div className="w-full bg-slate-900/40 border border-slate-800 rounded-lg p-4">
       <div className="flex items-center justify-between mb-3 text-xs">
         <div>
-          <span className="font-semibold text-slate-200">Comparaison du prix unitaire implicite par pays fournisseur</span>
+          <span className="font-semibold text-slate-200">
+            Comparaison du prix unitaire implicite par pays fournisseur
+          </span>
           <p className="text-[11px] text-slate-400 mt-0.5">
             Calculé par le ratio valeur déclarée CAF / masse nette importée (DGDDI).
           </p>
         </div>
         <span className="text-slate-400 font-mono text-[11px]">Unité : € / tonne</span>
       </div>
-      <ReactECharts option={option} style={{ height, width: '100%' }} />
+      <ReactEChartsCore echarts={echarts} option={option} style={{ height, width: '100%' }} />
     </div>
   );
 };

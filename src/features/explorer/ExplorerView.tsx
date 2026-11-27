@@ -21,7 +21,7 @@ import { ConcentrationGauge } from '../../components/charts/ConcentrationGauge.t
 import { FlowsTable } from '../../components/tables/FlowsTable.tsx';
 import { SourceCitation } from '../../components/common/SourceCitation.tsx';
 import { formatCurrencyEur, formatTonnes, formatPricePerTonne } from '../../lib/calculations.ts';
-import { Map, BarChart3, GitFork, LineChart, DollarSign, Table2, Layers } from 'lucide-react';
+import { Map, GitFork, LineChart, DollarSign, Table2, Layers } from 'lucide-react';
 
 interface ExplorerViewProps {
   params: FlowParams;
@@ -53,7 +53,6 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
   suppliers,
   timeseries,
   sankey,
-  onSelectPartner,
   onSelectInfrastructure,
 }) => {
   const [activeTab, setActiveTab] = useState<ExplorerTab>('overview');
@@ -93,7 +92,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label={params.flow === 'export' ? "Volume exporté" : "Volume importé"}
+          label={params.flow === 'export' ? 'Volume exporté' : 'Volume importé'}
           value={formatTonnes(summary.totalQuantityTonnes)}
           variation={summary.yoyQuantityChangePercent}
           variationLabel="YoY"
@@ -235,7 +234,8 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
           />
           <div className="p-4 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
             <span>
-              💡 Survolez les lignes de flux ou les ports pour afficher les volumes précis et les documents logistiques attestés.
+              💡 Survolez les lignes de flux ou les ports pour afficher les volumes précis et les
+              documents logistiques attestés.
             </span>
             <span className="font-mono text-cyan-400">MapLibre GL / OpenStreetMap</span>
           </div>
@@ -247,7 +247,9 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({
           <SankeyChart data={sankey} height="520px" />
           <div className="p-4 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
             <strong>Interprétation du flux de Sankey : </strong>
-            La largeur des branches représente les millions de tonnes (Mt) de pétrole brut acheminés par les pays d’origine vers le territoire métropolitain français avant d’alimenter les unités de raffinage.
+            La largeur des branches représente les millions de tonnes (Mt) de pétrole brut acheminés
+            par les pays d’origine vers le territoire métropolitain français avant d’alimenter les
+            unités de raffinage.
           </div>
         </div>
       )}

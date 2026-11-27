@@ -60,7 +60,7 @@ export async function testConnection(): Promise<boolean> {
     const client = await pool.connect();
     try {
       const res = await client.query<{ version: string; postgis_version: string }>(
-        'SELECT version(), PostGIS_Full_Version() AS postgis_version;'
+        'SELECT version(), PostGIS_Full_Version() AS postgis_version;',
       );
       actualPostgresVersion = res.rows[0]?.version;
       actualPostgisVersion = res.rows[0]?.postgis_version;
@@ -86,10 +86,15 @@ export class DatabaseUnavailableError extends Error {
   }
 }
 
-export async function executeQuery<T extends pg.QueryResultRow = any>(text: string, params?: any[]): Promise<pg.QueryResult<T>> {
+export async function executeQuery<T extends pg.QueryResultRow = any>(
+  text: string,
+  params?: any[],
+): Promise<pg.QueryResult<T>> {
   queriesCount++;
   if (!pool || !isRealPostgresConnected) {
-    throw new DatabaseUnavailableError(lastConnectionError || 'PostgreSQL/PostGIS is not connected.');
+    throw new DatabaseUnavailableError(
+      lastConnectionError || 'PostgreSQL/PostGIS is not connected.',
+    );
   }
 
   try {
@@ -115,14 +120,18 @@ export function getDatabaseStatus(): DatabaseStatus {
 
 export async function runMigrations(): Promise<{ success: boolean; message: string }> {
   if (!pool || !isRealPostgresConnected) {
-    return { success: false, message: lastConnectionError || 'PostgreSQL/PostGIS is not connected.' };
+    return {
+      success: false,
+      message: lastConnectionError || 'PostgreSQL/PostGIS is not connected.',
+    };
   }
 
   const migrationsPath = path.resolve(__dirname, '../../database/migrations');
   if (!fs.existsSync(migrationsPath)) {
     return { success: false, message: 'Database migrations directory not found.' };
   }
-  const migrationFiles = fs.readdirSync(migrationsPath)
+  const migrationFiles = fs
+    .readdirSync(migrationsPath)
     .filter((name) => /^\d+_[a-z0-9_-]+\.sql$/i.test(name))
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   if (migrationFiles.length === 0) {
@@ -148,11 +157,13 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
       const checksum = crypto.createHash('sha256').update(sql).digest('hex');
       const existing = await client.query<{ checksum_sha256: string }>(
         'SELECT checksum_sha256 FROM schema_migrations WHERE version = $1;',
-        [version]
+        [version],
       );
       if (existing.rows.length > 0) {
         if (existing.rows[0].checksum_sha256.trim() !== checksum) {
-          throw new Error(`Applied migration ${version} has changed; create a new migration instead.`);
+          throw new Error(
+            `Applied migration ${version} has changed; create a new migration instead.`,
+          );
         }
         continue;
       }
@@ -162,7 +173,7 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
         await client.query(sql);
         await client.query(
           'INSERT INTO schema_migrations (version, checksum_sha256) VALUES ($1, $2);',
-          [version, checksum]
+          [version, checksum],
         );
         await client.query('COMMIT');
         appliedCount++;
@@ -174,16 +185,19 @@ export async function runMigrations(): Promise<{ success: boolean; message: stri
 
     return {
       success: true,
-      message: appliedCount === 0
-        ? 'Database migrations are up to date.'
-        : `${appliedCount} database migration(s) applied successfully.`,
+      message:
+        appliedCount === 0
+          ? 'Database migrations are up to date.'
+          : `${appliedCount} database migration(s) applied successfully.`,
     };
   } catch (err: any) {
     lastConnectionError = err.message;
     return { success: false, message: `Migration error: ${err.message}` };
   } finally {
     if (client) {
-      await client.query("SELECT pg_advisory_unlock(hashtext('franceecoflow:schema-migrations'))").catch(() => undefined);
+      await client
+        .query("SELECT pg_advisory_unlock(hashtext('franceecoflow:schema-migrations'))")
+        .catch(() => undefined);
       client.release();
     }
   }

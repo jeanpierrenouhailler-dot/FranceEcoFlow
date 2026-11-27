@@ -47,7 +47,9 @@ export const PWAInstallButton: React.FC = () => {
                 </button>
               </div>
               <p className="text-sm text-slate-300 space-y-2">
-                1. Dans Safari, touchez le bouton <strong>Partager</strong> (icône carré avec flèche vers le haut).<br />
+                1. Dans Safari, touchez le bouton <strong>Partager</strong> (icône carré avec flèche
+                vers le haut).
+                <br />
                 2. Faites défiler et choisissez <strong>Sur l’écran d’accueil</strong>.<br />
                 3. Touchez <strong>Ajouter</strong> en haut à droite.
               </p>

@@ -36,7 +36,8 @@ export function normalizeDGDDIRows(rawRows: RawDGDDIRow[]): {
 
     const flowType = raw.flux === '2' || raw.flux === 'export' ? 'export' : 'import';
     const quantityTonnes = Math.round((raw.masse_nette_kg / 1000) * 1000) / 1000;
-    const implicitPriceEurPerTonne = Math.round((raw.valeur_caf_euros / quantityTonnes) * 100) / 100;
+    const implicitPriceEurPerTonne =
+      Math.round((raw.valeur_caf_euros / quantityTonnes) * 100) / 100;
 
     const periodMonth = raw.mois && raw.mois > 0 && raw.mois <= 12 ? raw.mois : undefined;
     const periodSuffix = periodMonth ? `_${periodMonth}` : '';

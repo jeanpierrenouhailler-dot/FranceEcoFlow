@@ -23,8 +23,14 @@ export function ingestAllCustomsData(): {
   files: IngestedFileMetadata[];
 } {
   const startTime = Date.now();
-  const annualCsvPath = path.resolve(projectRoot, 'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv');
-  const monthlyCsvPath = path.resolve(projectRoot, 'data/raw/dgddi/dgddi_flux_brut_mensuel_2024_2026.csv');
+  const annualCsvPath = path.resolve(
+    projectRoot,
+    'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv',
+  );
+  const monthlyCsvPath = path.resolve(
+    projectRoot,
+    'data/raw/dgddi/dgddi_flux_brut_mensuel_2024_2026.csv',
+  );
   const datasetPaths = [
     'data/raw/dgddi/dgddi_flux_brut_2015_2026_annuel.csv',
     'data/raw/dgddi/dgddi_flux_brut_mensuel_2024_2026.csv',
@@ -59,16 +65,22 @@ export function ingestAllCustomsData(): {
       monthlyRecordsLoaded: 0,
       filesIngested: [],
       filesQuarantined: files,
-      checks: [{
-        checkId: 'CHECK_DATASET_PROVENANCE',
-        name: 'Authentification de la provenance des fichiers',
-        description: 'Les fichiers non authentifiés restent en quarantaine et ne sont pas utilisés comme données métier.',
-        status: 'FAILED',
-        recordsTested: provenance.length,
-        passedCount: provenance.length - failedCount,
-        failedCount,
-        details: provenance.filter((record) => !isDatasetVerified(record.path)).map((record) => `${record.path}: ${record.reason}`).join(' '),
-      }],
+      checks: [
+        {
+          checkId: 'CHECK_DATASET_PROVENANCE',
+          name: 'Authentification de la provenance des fichiers',
+          description:
+            'Les fichiers non authentifiés restent en quarantaine et ne sont pas utilisés comme données métier.',
+          status: 'FAILED',
+          recordsTested: provenance.length,
+          passedCount: provenance.length - failedCount,
+          failedCount,
+          details: provenance
+            .filter((record) => !isDatasetVerified(record.path))
+            .map((record) => `${record.path}: ${record.reason}`)
+            .join(' '),
+        },
+      ],
       overallStatus: 'FAILED',
     };
     cachedFlows = [];
@@ -81,7 +93,11 @@ export function ingestAllCustomsData(): {
   const monthlyRes = fs.existsSync(monthlyCsvPath) ? loadDGDDIMonthlyFile(monthlyCsvPath) : null;
   const allFlows = [...annualRes.flows, ...(monthlyRes?.flows ?? [])];
   const durationMs = Date.now() - startTime;
-  const report = runDataQualityChecks(allFlows, [annualRes.metadata, ...(monthlyRes ? [monthlyRes.metadata] : [])], durationMs);
+  const report = runDataQualityChecks(
+    allFlows,
+    [annualRes.metadata, ...(monthlyRes ? [monthlyRes.metadata] : [])],
+    durationMs,
+  );
 
   cachedFlows = allFlows;
   cachedAuditReport = report;

@@ -11,14 +11,19 @@ export class ComtradeConnector implements SourceConnector<EconomicFlow> {
   readonly name = 'United Nations Comtrade Database';
   readonly provider = 'United Nations Statistics Division (UNSD)';
   readonly type = 'api';
-  readonly description = 'Source de référence envisagée : commerce mondial de marchandises. Extraction live non implémentée.';
+  readonly description =
+    'Source de référence envisagée : commerce mondial de marchandises. Extraction live non implémentée.';
   readonly officialUrl = 'https://comtradeplus.un.org';
 
   private cache: Map<string, ComtradeCacheEntry> = new Map();
   private readonly CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour cache
   private apiKey: string | undefined = process.env.COMTRADE_API_KEY;
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
   async parse(raw: any): Promise<EconomicFlow[]> {
     const flows: EconomicFlow[] = [];
@@ -59,7 +64,15 @@ export class ComtradeConnector implements SourceConnector<EconomicFlow> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<EconomicFlow>> {
     const start = Date.now();

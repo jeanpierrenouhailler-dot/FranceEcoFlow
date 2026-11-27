@@ -1,14 +1,6 @@
-import { EconomicFlow } from '../../../src/types/index.ts';
-import { EconomicIndicator, EnergyObservation } from '../../db/repository.ts';
-
 export type SourceType = 'api' | 'file' | 'sdmx' | 'overpass' | 'wmts';
 export type IngestionStatus =
-  | 'SUCCESS'
-  | 'PARTIAL'
-  | 'FAILED'
-  | 'NOT_CONFIGURED'
-  | 'NOT_AVAILABLE'
-  | 'STALE';
+  'SUCCESS' | 'PARTIAL' | 'FAILED' | 'NOT_CONFIGURED' | 'NOT_AVAILABLE' | 'STALE';
 
 export interface ConnectorHealth {
   reachable: boolean;

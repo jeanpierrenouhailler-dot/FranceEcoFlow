@@ -16,7 +16,8 @@ export const SourcesView: React.FC<SourcesViewProps> = ({ sources, datasets }) =
           <span>Sources référencées & état de vérification</span>
         </h1>
         <p className="mt-2 text-sm text-slate-400 leading-relaxed">
-          Ce répertoire liste des sources potentielles. Les extractions et les licences n’ont pas encore été vérifiées ; aucun statut de source ne vaut preuve de provenance.
+          Ce répertoire liste des sources potentielles. Les extractions et les licences n’ont pas
+          encore été vérifiées ; aucun statut de source ne vaut preuve de provenance.
         </p>
       </div>
 
@@ -76,7 +77,9 @@ export const SourcesView: React.FC<SourcesViewProps> = ({ sources, datasets }) =
                           <span>Fréquence : {ds.frequency}</span>
                           <span>Dernière extraction : {ds.lastUpdated || 'Aucune vérifiée'}</span>
                         </div>
-                        <span className="text-amber-400 font-mono">Provenance : {ds.provenanceStatus || 'UNVERIFIED'}</span>
+                        <span className="text-amber-400 font-mono">
+                          Provenance : {ds.provenanceStatus || 'UNVERIFIED'}
+                        </span>
                       </div>
                     ))}
                   </div>

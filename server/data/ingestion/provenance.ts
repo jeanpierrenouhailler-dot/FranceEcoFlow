@@ -41,12 +41,15 @@ export function getDatasetProvenance(relativePath: string): DatasetProvenance {
   const absolutePath = path.resolve(projectRoot, relativePath);
   const hashMatches =
     fs.existsSync(absolutePath) &&
-    crypto.createHash('sha256').update(fs.readFileSync(absolutePath)).digest('hex') === record.sha256;
+    crypto.createHash('sha256').update(fs.readFileSync(absolutePath)).digest('hex') ===
+      record.sha256;
 
   return {
     ...record,
     status: hashMatches ? record.status : 'QUARANTINED',
-    reason: hashMatches ? record.reason : 'File is missing or its SHA-256 hash differs from the provenance registry.',
+    reason: hashMatches
+      ? record.reason
+      : 'File is missing or its SHA-256 hash differs from the provenance registry.',
     hashMatches,
   };
 }

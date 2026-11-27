@@ -20,7 +20,6 @@ import {
   EnergyObservation,
 } from '../types/index.ts';
 
-
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -31,7 +30,8 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
-    this.isUnavailable = status === 503 || status === 409 || code === 'NOT_AVAILABLE' || code === 'UNVERIFIED';
+    this.isUnavailable =
+      status === 503 || status === 409 || code === 'NOT_AVAILABLE' || code === 'UNVERIFIED';
   }
 }
 
@@ -56,7 +56,7 @@ async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
     throw new ApiError(
       'Le service API ne répond pas en JSON (fallback HTML ou serveur API inactif).',
       503,
-      'NOT_AVAILABLE'
+      'NOT_AVAILABLE',
     );
   }
 
@@ -91,7 +91,9 @@ export const api = {
     return fetchApi(`/api/flows/summary${q}`);
   },
 
-  async getPartners(params?: FlowParams): Promise<{ filters: any; count: number; data: SupplierSummary[] }> {
+  async getPartners(
+    params?: FlowParams,
+  ): Promise<{ filters: any; count: number; data: SupplierSummary[] }> {
     const q = buildQuery(params);
     return fetchApi(`/api/flows/partners${q}`);
   },
@@ -106,7 +108,9 @@ export const api = {
     return fetchApi(`/api/flows/sankey${q}`);
   },
 
-  async getAnomalies(product: string = 'crude_oil'): Promise<{ productId: string; data: AnomalyDetection[] }> {
+  async getAnomalies(
+    product: string = 'crude_oil',
+  ): Promise<{ productId: string; data: AnomalyDetection[] }> {
     return fetchApi(`/api/flows/anomalies?product=${product}`);
   },
 
@@ -171,7 +175,7 @@ export const api = {
   async getSpatialInfrastructuresWithin(
     lat: number,
     lng: number,
-    radiusKm: number
+    radiusKm: number,
   ): Promise<{ center: [number, number]; radiusKm: number; count: number; data: any[] }> {
     return fetchApi(`/api/database/spatial/within?lat=${lat}&lng=${lng}&radius=${radiusKm}`);
   },
@@ -189,7 +193,9 @@ export const api = {
     return fetchApi(`/api/sources/insee${q}`);
   },
 
-  async getEnergyObservations(metric?: string): Promise<{ count: number; data: EnergyObservation[] }> {
+  async getEnergyObservations(
+    metric?: string,
+  ): Promise<{ count: number; data: EnergyObservation[] }> {
     const q = metric ? `?metric=${metric}` : '';
     return fetchApi(`/api/sources/energy${q}`);
   },
@@ -206,6 +212,3 @@ export const api = {
     return fetchApi('/api/products/nomenclatures');
   },
 };
-
-
-

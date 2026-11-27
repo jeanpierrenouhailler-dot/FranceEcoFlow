@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactECharts from 'echarts-for-react';
+import { echarts, ReactEChartsCore } from '../../lib/echarts.ts';
 import { SupplierSummary } from '../../types/index.ts';
 
 interface PartnerBarChartProps {
@@ -16,7 +16,9 @@ export const PartnerBarChart: React.FC<PartnerBarChartProps> = ({
   const topSuppliers = suppliers.slice(0, 10).reverse();
   const names = topSuppliers.map((s) => `${s.country.flag} ${s.country.nameFr}`);
   const shares = topSuppliers.map((s) => s.marketSharePercent);
-  const volumesMt = topSuppliers.map((s) => Math.round((s.totalQuantityTonnes / 1000000) * 10) / 10);
+  const volumesMt = topSuppliers.map(
+    (s) => Math.round((s.totalQuantityTonnes / 1000000) * 10) / 10,
+  );
 
   const option = {
     backgroundColor: 'transparent',
@@ -111,10 +113,17 @@ export const PartnerBarChart: React.FC<PartnerBarChartProps> = ({
   return (
     <div className="w-full bg-slate-900/40 border border-slate-800 rounded-lg p-4">
       <div className="flex items-center justify-between mb-3 text-xs">
-        <span className="font-semibold text-slate-200">Principaux pays fournisseurs de pétrole brut</span>
+        <span className="font-semibold text-slate-200">
+          Principaux pays fournisseurs de pétrole brut
+        </span>
         <span className="text-slate-400 font-mono text-[11px]">Part en volume (%)</span>
       </div>
-      <ReactECharts option={option} onEvents={onEvents} style={{ height, width: '100%' }} />
+      <ReactEChartsCore
+        echarts={echarts}
+        option={option}
+        onEvents={onEvents}
+        style={{ height, width: '100%' }}
+      />
     </div>
   );
 };

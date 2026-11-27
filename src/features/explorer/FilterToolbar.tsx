@@ -44,8 +44,12 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
             className="w-full bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-slate-100 focus:border-cyan-500 focus:outline-hidden font-medium"
           >
             <option value="FR">🇫🇷 France (République française)</option>
-            <option value="DE" disabled>🇩🇪 Allemagne (Phase 4 - Europe)</option>
-            <option value="IT" disabled>🇮🇹 Italie (Phase 4 - Europe)</option>
+            <option value="DE" disabled>
+              🇩🇪 Allemagne (Phase 4 - Europe)
+            </option>
+            <option value="IT" disabled>
+              🇮🇹 Italie (Phase 4 - Europe)
+            </option>
           </select>
         </div>
 
@@ -102,7 +106,9 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
             <input
               type="number"
               value={params.from ?? ''}
-              onChange={(e) => onChange({ from: e.target.value ? Number(e.target.value) : undefined })}
+              onChange={(e) =>
+                onChange({ from: e.target.value ? Number(e.target.value) : undefined })
+              }
               aria-label="Première année"
               placeholder="Début"
               className="w-1/2 bg-slate-950 border border-slate-800 rounded-md px-2 py-1.5 text-slate-100 font-mono text-[11px] focus:border-cyan-500 focus:outline-hidden"
@@ -111,7 +117,9 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
             <input
               type="number"
               value={params.to ?? ''}
-              onChange={(e) => onChange({ to: e.target.value ? Number(e.target.value) : undefined })}
+              onChange={(e) =>
+                onChange({ to: e.target.value ? Number(e.target.value) : undefined })
+              }
               aria-label="Dernière année"
               placeholder="Fin"
               className="w-1/2 bg-slate-950 border border-slate-800 rounded-md px-2 py-1.5 text-slate-100 font-mono text-[11px] focus:border-cyan-500 focus:outline-hidden"

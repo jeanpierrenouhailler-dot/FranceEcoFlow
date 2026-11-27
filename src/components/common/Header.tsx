@@ -14,7 +14,6 @@ export type ActiveTab =
   | 'sources'
   | 'ingestion';
 
-
 interface HeaderProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;

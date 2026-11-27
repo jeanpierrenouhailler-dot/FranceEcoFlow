@@ -24,7 +24,6 @@ import { resolveProductFromNC8, getSupportedNomenclatures } from '../normalizati
 import { isDatasetVerified } from '../data/ingestion/provenance.ts';
 import { validateAdminBearerToken } from './adminAuth.ts';
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../..');
@@ -41,7 +40,10 @@ function logApiFailure(operation: string, error: unknown): void {
 }
 
 function requireIngestionAdmin(req: Request, res: Response, next: NextFunction): void {
-  const status = validateAdminBearerToken(req.get('authorization'), process.env.INGESTION_ADMIN_TOKEN);
+  const status = validateAdminBearerToken(
+    req.get('authorization'),
+    process.env.INGESTION_ADMIN_TOKEN,
+  );
   if (status === 'NOT_CONFIGURED') {
     res.status(503).json({ error: 'Ingestion administration is not configured.' });
     return;
@@ -173,7 +175,7 @@ router.get('/flows/anomalies', async (req: Request, res: Response) => {
     const productId = (req.query.product as string) || 'crude_oil';
     const flows = await getPublishedFlowRows(
       { reporterCountryId: 'FR', flowType: 'import', productId, periodType: 'annual' },
-      res
+      res,
     );
     if (!flows) return;
     const anomalies = detectAnomalies(productId, flows);
@@ -211,7 +213,9 @@ router.get('/countries/:id', async (req: Request, res: Response) => {
     const partnerRankings = getSupplierRankings(filters, flows);
     const summary = calculateFlowSummary(filters, flows);
     const timeseries = getTimeseriesData(filters, flows);
-    const relatedRoutes = (await dbRepository.findTransportRoutes()).filter((r) => r.sourcePartnerId === country.id);
+    const relatedRoutes = (await dbRepository.findTransportRoutes()).filter(
+      (r) => r.sourcePartnerId === country.id,
+    );
 
     res.json({
       country,
@@ -309,9 +313,10 @@ router.get('/transport-routes', async (req: Request, res: Response) => {
   try {
     const partner = req.query.partner as string;
     const allRoutes = await dbRepository.findTransportRoutes();
-    const routes = partner && partner !== 'all'
-      ? allRoutes.filter((route) => route.sourcePartnerId === partner)
-      : allRoutes;
+    const routes =
+      partner && partner !== 'all'
+        ? allRoutes.filter((route) => route.sourcePartnerId === partner)
+        : allRoutes;
     res.json({ count: routes.length, data: routes });
   } catch (error) {
     logApiFailure('retrieve transport routes', error);
@@ -354,14 +359,14 @@ router.get('/export', async (req: Request, res: Response) => {
             f.implicitPriceEurPerTonne,
             f.confidence,
             f.sourceId,
-          ].join(';')
+          ].join(';'),
         )
         .join('\n');
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="france_economic_flows_${filters.startYear}_${filters.endYear}.csv"`
+        `attachment; filename="france_economic_flows_${filters.startYear}_${filters.endYear}.csv"`,
       );
       return res.send('\uFEFF' + csvHeader + csvRows);
     }
@@ -451,7 +456,6 @@ router.get('/ingestion/raw-sample', (req: Request, res: Response) => {
   }
 });
 
-
 // 16. GET /api/database/status
 router.get('/database/status', (_req: Request, res: Response) => {
   const { lastError, ...status } = getDatabaseStatus();
@@ -470,11 +474,19 @@ router.get('/database/spatial/within', async (req: Request, res: Response) => {
     const lng = Number(req.query.lng);
     const radiusKm = Number(req.query.radius);
     if (
-      !Number.isFinite(lat) || lat < -90 || lat > 90 ||
-      !Number.isFinite(lng) || lng < -180 || lng > 180 ||
-      !Number.isFinite(radiusKm) || radiusKm <= 0 || radiusKm > 20038
+      !Number.isFinite(lat) ||
+      lat < -90 ||
+      lat > 90 ||
+      !Number.isFinite(lng) ||
+      lng < -180 ||
+      lng > 180 ||
+      !Number.isFinite(radiusKm) ||
+      radiusKm <= 0 ||
+      radiusKm > 20038
     ) {
-      return res.status(400).json({ error: 'Valid lat, lng, and radius query parameters are required.' });
+      return res
+        .status(400)
+        .json({ error: 'Valid lat, lng, and radius query parameters are required.' });
     }
 
     const results = await dbRepository.findInfrastructuresWithinRadius(lng, lat, radiusKm);
@@ -487,7 +499,9 @@ router.get('/database/spatial/within', async (req: Request, res: Response) => {
   } catch (err) {
     logApiFailure('run spatial query', err);
     const status = err instanceof DatabaseUnavailableError ? 503 : 500;
-    res.status(status).json({ error: status === 503 ? 'Spatial database is unavailable' : 'Spatial query failed' });
+    res
+      .status(status)
+      .json({ error: status === 503 ? 'Spatial database is unavailable' : 'Spatial query failed' });
   }
 });
 
@@ -521,7 +535,6 @@ router.get('/sources/insee', async (req: Request, res: Response) => {
     res.status(503).json({ error: 'INSEE observations are unavailable from PostgreSQL.' });
   }
 });
-
 
 // 21. GET /api/sources/energy (JODI / SDES energy balance observations)
 router.get('/sources/energy', async (req: Request, res: Response) => {
@@ -557,7 +570,3 @@ router.post('/sources/ingest', requireIngestionAdmin, async (_req: Request, res:
 });
 
 export default router;
-
-
-
-

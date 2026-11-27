@@ -11,21 +11,16 @@ import {
 import { api, ApiError } from '../../lib/api.ts';
 import {
   ShieldCheck,
-  FileSpreadsheet,
   CheckCircle2,
   FileCode,
-  Hash,
   Database,
   Layers,
   MapPin,
   TrendingUp,
   Activity,
-  Globe,
   Radio,
-  BarChart3,
   ExternalLink,
   Search,
-  RefreshCw,
 } from 'lucide-react';
 
 export const IngestionAuditView: React.FC = () => {
@@ -50,7 +45,9 @@ export const IngestionAuditView: React.FC = () => {
   const [spatialError, setSpatialError] = useState<string | null>(null);
 
   // Sub-tabs
-  const [subTab, setSubTab] = useState<'sources' | 'database' | 'nomenclatures' | 'insee' | 'energy' | 'checks' | 'raw'>('sources');
+  const [subTab, setSubTab] = useState<
+    'sources' | 'database' | 'nomenclatures' | 'insee' | 'energy' | 'checks' | 'raw'
+  >('sources');
 
   useEffect(() => {
     Promise.allSettled([
@@ -63,8 +60,8 @@ export const IngestionAuditView: React.FC = () => {
       api.getEnergyObservations(),
       api.getNomenclatures(),
       api.getInfrastructures(),
-    ])
-      .then(([repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, infraRes]) => {
+    ]).then(
+      ([repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, infraRes]) => {
         if (repRes.status === 'fulfilled') setReport(repRes.value.data);
         if (sampleRes.status === 'fulfilled') setRawSample(sampleRes.value);
         if (dbRes.status === 'fulfilled') setDbStatus(dbRes.value.data);
@@ -77,7 +74,8 @@ export const IngestionAuditView: React.FC = () => {
           const firstCode = nomRes.value.data[0]?.nc8;
           if (firstCode) {
             setSelectedNC8(firstCode);
-            api.resolveNC8Product(firstCode)
+            api
+              .resolveNC8Product(firstCode)
               .then((response) => setResolvedProductInfo(response.data))
               .catch((error) => console.error('Nomenclature resolution failed:', error));
           }
@@ -86,35 +84,49 @@ export const IngestionAuditView: React.FC = () => {
           setSpatialHubs(infraRes.value.data);
           setSpatialHub(infraRes.value.data[0]?.id ?? '');
         }
-        [repRes, sampleRes, dbRes, connRes, healthRes, inseeRes, energyRes, nomRes, infraRes]
-          .forEach((result) => {
-            if (result.status === 'rejected') {
-              const reason = result.reason;
-              if (reason instanceof ApiError && reason.isUnavailable) {
-                console.warn('Audit endpoint unavailable:', reason.message);
-              } else {
-                console.error('Audit data request failed:', reason);
-              }
+        [
+          repRes,
+          sampleRes,
+          dbRes,
+          connRes,
+          healthRes,
+          inseeRes,
+          energyRes,
+          nomRes,
+          infraRes,
+        ].forEach((result) => {
+          if (result.status === 'rejected') {
+            const reason = result.reason;
+            if (reason instanceof ApiError && reason.isUnavailable) {
+              console.warn('Audit endpoint unavailable:', reason.message);
+            } else {
+              console.error('Audit data request failed:', reason);
             }
-          });
+          }
+        });
         setLoading(false);
-      })
+      },
+    );
   }, []);
 
   const handleResolveNC8 = (code: string) => {
     setSelectedNC8(code);
-    api.resolveNC8Product(code)
+    api
+      .resolveNC8Product(code)
       .then((res) => setResolvedProductInfo(res.data))
       .catch((error) => console.error('Nomenclature resolution failed:', error));
   };
-
 
   // Run spatial query when hub or radius changes
   useEffect(() => {
     const hub = spatialHubs.find((infra) => infra.id === spatialHub);
     if (!hub) {
       setSpatialResults([]);
-      setSpatialError(spatialHubs.length === 0 ? 'Aucune infrastructure vérifiée n’est disponible.' : 'Sélectionnez une infrastructure.');
+      setSpatialError(
+        spatialHubs.length === 0
+          ? 'Aucune infrastructure vérifiée n’est disponible.'
+          : 'Sélectionnez une infrastructure.',
+      );
       setSpatialLoading(false);
       return;
     }
@@ -136,7 +148,8 @@ export const IngestionAuditView: React.FC = () => {
   if (loading) {
     return (
       <div className="py-24 text-center text-xs font-mono text-slate-400 animate-pulse">
-        Initialisation du registre PostgreSQL / PostGIS et vérification des 9 connecteurs de sources...
+        Initialisation du registre PostgreSQL / PostGIS et vérification des 9 connecteurs de
+        sources...
       </div>
     );
   }
@@ -153,7 +166,9 @@ export const IngestionAuditView: React.FC = () => {
           Intégration PostgreSQL/PostGIS & Couche d'Abstraction des Sources
         </h1>
         <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-3xl">
-          Prototype d’intégration. Les données des connecteurs et les infrastructures restent indisponibles tant que leur extraction, leur persistance et leur provenance ne sont pas vérifiées.
+          Prototype d’intégration. Les données des connecteurs et les infrastructures restent
+          indisponibles tant que leur extraction, leur persistance et leur provenance ne sont pas
+          vérifiées.
         </p>
 
         {/* Sub-navigation bar */}
@@ -193,7 +208,6 @@ export const IngestionAuditView: React.FC = () => {
             <Layers className="w-3.5 h-3.5" />
             <span>Nomenclatures NC8 & Produits</span>
           </button>
-
 
           <button
             onClick={() => setSubTab('insee')}
@@ -254,7 +268,8 @@ export const IngestionAuditView: React.FC = () => {
               <span>Couche d'Abstraction des Sources (`server/ingestion/sources/*`)</span>
             </h2>
             <span className="text-xs font-mono text-amber-400">
-              {Object.values(sourcesHealth).filter((health: any) => health?.reachable).length} / {connectors.length} sources accessibles
+              {Object.values(sourcesHealth).filter((health: any) => health?.reachable).length} /{' '}
+              {connectors.length} sources accessibles
             </span>
           </div>
 
@@ -282,9 +297,15 @@ export const IngestionAuditView: React.FC = () => {
                   <div className="pt-3 border-t border-slate-800/80 space-y-2 text-[11px]">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Santé / Disponibilité</span>
-                      <span className={`flex items-center gap-1 font-mono font-semibold ${health?.reachable ? 'text-emerald-400' : 'text-amber-400'}`}>
-                        <span className={`w-2 h-2 rounded-full ${health?.reachable ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                        {health?.reachable ? `EN LIGNE (${health.latencyMs} ms)` : health?.status || 'ÉTAT INCONNU'}
+                      <span
+                        className={`flex items-center gap-1 font-mono font-semibold ${health?.reachable ? 'text-emerald-400' : 'text-amber-400'}`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${health?.reachable ? 'bg-emerald-400' : 'bg-amber-400'}`}
+                        />
+                        {health?.reachable
+                          ? `EN LIGNE (${health.latencyMs} ms)`
+                          : health?.status || 'ÉTAT INCONNU'}
                       </span>
                     </div>
 
@@ -319,8 +340,12 @@ export const IngestionAuditView: React.FC = () => {
                   {dbStatus?.connected ? dbStatus.version : 'Base de données indisponible'}
                 </h3>
               </div>
-              <div className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-bold flex items-center gap-2 ${dbStatus?.connected ? 'bg-emerald-950 border-emerald-800 text-emerald-300' : 'bg-amber-950 border-amber-800 text-amber-300'}`}>
-                <span className={`w-2 h-2 rounded-full ${dbStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <div
+                className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-bold flex items-center gap-2 ${dbStatus?.connected ? 'bg-emerald-950 border-emerald-800 text-emerald-300' : 'bg-amber-950 border-amber-800 text-amber-300'}`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${dbStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}
+                />
                 <span>{dbStatus?.engine}</span>
               </div>
             </div>
@@ -356,7 +381,8 @@ export const IngestionAuditView: React.FC = () => {
                   <span>Requête Spatiale PostGIS en temps réel (`ST_DWithin`)</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Sélectionnez un port d'entrée et un rayon pour exécuter la requête spatiale PostGIS de recherche d'infrastructures connexes.
+                  Sélectionnez un port d'entrée et un rayon pour exécuter la requête spatiale
+                  PostGIS de recherche d'infrastructures connexes.
                 </p>
               </div>
 
@@ -367,8 +393,14 @@ export const IngestionAuditView: React.FC = () => {
                   disabled={spatialHubs.length === 0}
                   className="bg-slate-950 border border-slate-700 text-xs rounded px-2.5 py-1.5 text-white"
                 >
-                  {spatialHubs.length === 0 && <option value="">Aucune infrastructure vérifiée</option>}
-                  {spatialHubs.map((hub) => <option key={hub.id} value={hub.id}>{hub.name}</option>)}
+                  {spatialHubs.length === 0 && (
+                    <option value="">Aucune infrastructure vérifiée</option>
+                  )}
+                  {spatialHubs.map((hub) => (
+                    <option key={hub.id} value={hub.id}>
+                      {hub.name}
+                    </option>
+                  ))}
                 </select>
 
                 <select
@@ -411,13 +443,13 @@ export const IngestionAuditView: React.FC = () => {
                   ) : (
                     spatialResults.map((infra) => (
                       <tr key={infra.id} className="hover:bg-slate-900/40">
-                        <td className="py-2 px-3 text-white font-sans font-medium">
-                          {infra.name}
-                        </td>
+                        <td className="py-2 px-3 text-white font-sans font-medium">{infra.name}</td>
                         <td className="py-2 px-3 text-cyan-400 uppercase text-[10px]">
                           {infra.type}
                         </td>
-                        <td className="py-2 px-3 text-slate-400 font-sans">{infra.operator || 'Non renseigné'}</td>
+                        <td className="py-2 px-3 text-slate-400 font-sans">
+                          {infra.operator || 'Non renseigné'}
+                        </td>
                         <td className="py-2 px-3 text-right text-emerald-400 font-bold">
                           {infra.distanceKm} km
                         </td>
@@ -457,7 +489,10 @@ export const IngestionAuditView: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-              Chaque ligne de déclaration douanière de la DGDDI comporte un code de la Nomenclature Combinée à 8 chiffres (NC8). Le moteur de normalisation résout automatiquement le produit métier, le chapitre du Système Harmonisé (SH), l'unité statistique légale et la catégorie sans aucune dérivation arbitraire.
+              Chaque ligne de déclaration douanière de la DGDDI comporte un code de la Nomenclature
+              Combinée à 8 chiffres (NC8). Le moteur de normalisation résout automatiquement le
+              produit métier, le chapitre du Système Harmonisé (SH), l'unité statistique légale et
+              la catégorie sans aucune dérivation arbitraire.
             </p>
 
             {/* Interactive Resolver Tester */}
@@ -487,31 +522,45 @@ export const IngestionAuditView: React.FC = () => {
               {resolvedProductInfo && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
                   <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase block">Code NC8 Résolu</span>
-                    <span className="font-mono font-bold text-cyan-400 text-sm">{resolvedProductInfo.nc8Code}</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">
+                      Code NC8 Résolu
+                    </span>
+                    <span className="font-mono font-bold text-cyan-400 text-sm">
+                      {resolvedProductInfo.nc8Code}
+                    </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
                       SH {resolvedProductInfo.hsHeading}
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase block">Produit Normalisé</span>
-                    <span className="font-sans font-bold text-white text-sm">{resolvedProductInfo.productNameFr}</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">
+                      Produit Normalisé
+                    </span>
+                    <span className="font-sans font-bold text-white text-sm">
+                      {resolvedProductInfo.productNameFr}
+                    </span>
                     <span className="text-[10px] text-cyan-300 font-mono block mt-0.5">
                       id: {resolvedProductInfo.productId}
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase block">Catégorie Métier</span>
-                    <span className="font-sans font-bold text-amber-300 text-sm">{resolvedProductInfo.categoryNameFr}</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">
+                      Catégorie Métier
+                    </span>
+                    <span className="font-sans font-bold text-amber-300 text-sm">
+                      {resolvedProductInfo.categoryNameFr}
+                    </span>
                     <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
                       Unité: {resolvedProductInfo.statisticalUnit}
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase block">Confiance de classification</span>
+                    <span className="text-[10px] text-slate-500 uppercase block">
+                      Confiance de classification
+                    </span>
                     <span className="font-mono font-bold text-emerald-400 text-sm">
                       {resolvedProductInfo.classificationConfidence}
                     </span>
@@ -548,10 +597,16 @@ export const IngestionAuditView: React.FC = () => {
                     <tr key={item.nc8} className="hover:bg-slate-900/40">
                       <td className="py-2.5 px-3 text-cyan-400 font-bold">{item.nc8}</td>
                       <td className="py-2.5 px-3 text-slate-400">{item.hsHeading}</td>
-                      <td className="py-2.5 px-3 font-sans text-white max-w-xs">{item.descriptionFr}</td>
-                      <td className="py-2.5 px-3 font-sans font-medium text-emerald-400">{item.productId}</td>
+                      <td className="py-2.5 px-3 font-sans text-white max-w-xs">
+                        {item.descriptionFr}
+                      </td>
+                      <td className="py-2.5 px-3 font-sans font-medium text-emerald-400">
+                        {item.productId}
+                      </td>
                       <td className="py-2.5 px-3 font-sans text-slate-300">{item.categoryId}</td>
-                      <td className="py-2.5 px-3 text-center font-bold text-amber-300">{item.unit}</td>
+                      <td className="py-2.5 px-3 text-center font-bold text-amber-300">
+                        {item.unit}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -563,7 +618,6 @@ export const IngestionAuditView: React.FC = () => {
 
       {/* SUB-TAB 3: INSEE MACROECONOMIC INDICATORS */}
       {subTab === 'insee' && (
-
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
@@ -680,9 +734,7 @@ export const IngestionAuditView: React.FC = () => {
                 {report.checks.map((chk) => (
                   <tr key={chk.checkId} className="hover:bg-slate-900/30">
                     <td className="py-2.5 px-3 text-cyan-400 font-bold">{chk.checkId}</td>
-                    <td className="py-2.5 px-3 font-sans font-medium text-slate-200">
-                      {chk.name}
-                    </td>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-200">{chk.name}</td>
                     <td className="py-2.5 px-3 font-sans text-slate-400">{chk.description}</td>
                     <td className="py-2.5 px-3 text-center">
                       <span className="inline-flex items-center gap-1 font-bold text-emerald-400">
@@ -750,7 +802,6 @@ export const IngestionAuditView: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
         </section>

@@ -52,9 +52,7 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({
     },
   };
 
-  const meta = sourceId
-    ? sourceMeta[sourceId]
-    : undefined;
+  const meta = sourceId ? sourceMeta[sourceId] : undefined;
   const source = meta || {
     name: 'Source non documentée',
     org: 'Producteur non déterminé',
@@ -64,7 +62,9 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({
   };
 
   return (
-    <div className={`text-xs text-slate-400 border border-slate-800/80 rounded-md bg-slate-900/40 p-3 ${className}`}>
+    <div
+      className={`text-xs text-slate-400 border border-slate-800/80 rounded-md bg-slate-900/40 p-3 ${className}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-slate-300 font-medium">
           <Database className="w-3.5 h-3.5 text-cyan-400" />

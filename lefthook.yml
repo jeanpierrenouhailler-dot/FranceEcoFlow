@@ -1,0 +1,15 @@
+pre-commit:
+  commands:
+    oxlint:
+      glob: '*.{js,jsx,ts,tsx}'
+      run: npx oxlint {staged_files}
+    prettier:
+      glob: '*.{js,jsx,ts,tsx,css,json,yml,yaml}'
+      run: npx prettier --check {staged_files}
+
+pre-push:
+  commands:
+    typecheck:
+      run: npm run lint
+    tests:
+      run: npm test

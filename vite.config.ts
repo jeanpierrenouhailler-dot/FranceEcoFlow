@@ -16,7 +16,8 @@ export default defineConfig(() => {
           id: '/',
           name: 'France Economic Flow Explorer',
           short_name: 'FlowExplorer',
-          description: 'Exploration des flux économiques français ; jeux de données encore non vérifiés.',
+          description:
+            'Exploration des flux économiques français ; jeux de données encore non vérifiés.',
           theme_color: '#0b1120',
           background_color: '#0b1120',
           display: 'standalone',
@@ -98,4 +99,3 @@ export default defineConfig(() => {
     },
   };
 });
-

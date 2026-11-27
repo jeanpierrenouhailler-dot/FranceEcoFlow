@@ -4,10 +4,7 @@ import { validateAdminBearerToken } from '../server/api/adminAuth.ts';
 
 describe('Ingestion administrator bearer token', () => {
   test('accepts a configured matching bearer token', () => {
-    assert.equal(
-      validateAdminBearerToken('Bearer test-secret', 'test-secret'),
-      'VALID'
-    );
+    assert.equal(validateAdminBearerToken('Bearer test-secret', 'test-secret'), 'VALID');
   });
 
   test('rejects missing and incorrect authorization headers', () => {

@@ -2,13 +2,31 @@ import { EconomicFlow } from '../../../src/types/index.ts';
 import { QualityCheckResult, IngestionAuditReport, IngestedFileMetadata } from './types.ts';
 
 const VALID_ISO_PARTNERS = new Set([
-  'KZ', 'US', 'SA', 'NO', 'NG', 'IQ', 'DZ', 'LY', 'AZ', 'AO', 'RU', 'GB', 'BR', 'AE', 'DE', 'BE', 'NL', 'IT', 'ES'
+  'KZ',
+  'US',
+  'SA',
+  'NO',
+  'NG',
+  'IQ',
+  'DZ',
+  'LY',
+  'AZ',
+  'AO',
+  'RU',
+  'GB',
+  'BR',
+  'AE',
+  'DE',
+  'BE',
+  'NL',
+  'IT',
+  'ES',
 ]);
 
 export function runDataQualityChecks(
   flows: EconomicFlow[],
   filesMetadata: IngestedFileMetadata[],
-  durationMs: number
+  durationMs: number,
 ): IngestionAuditReport {
   const checks: QualityCheckResult[] = [];
   const hasFlowRecords = flows.length > 0;
@@ -26,7 +44,8 @@ export function runDataQualityChecks(
   checks.push({
     checkId: 'CHECK_NON_NEGATIVE_VALUES',
     name: 'Non-négativité des valeurs et volumes',
-    description: 'Vérifie qu’aucune valeur monétaire CAF ni aucun volume en tonnes n’est négatif ou nul.',
+    description:
+      'Vérifie qu’aucune valeur monétaire CAF ni aucun volume en tonnes n’est négatif ou nul.',
     status: hasFlowRecords && nonNegativeFailed === 0 ? 'PASSED' : 'FAILED',
     recordsTested: flows.length,
     passedCount: nonNegativePassed,
@@ -56,7 +75,8 @@ export function runDataQualityChecks(
   checks.push({
     checkId: 'CHECK_IMPLICIT_PRICE_COHERENCE',
     name: 'Cohérence du prix unitaire implicite',
-    description: 'Vérifie l’absence de NaN/Infinity et valide que le ratio valeur/masse se situe dans la plage économique des bruts (100 - 1 500 €/t).',
+    description:
+      'Vérifie l’absence de NaN/Infinity et valide que le ratio valeur/masse se situe dans la plage économique des bruts (100 - 1 500 €/t).',
     status: hasFlowRecords && priceFailed === 0 ? 'PASSED' : 'FAILED',
     recordsTested: flows.length,
     passedCount: pricePassed,
@@ -81,7 +101,8 @@ export function runDataQualityChecks(
   checks.push({
     checkId: 'CHECK_ISO_PARTNER_CODES',
     name: 'Conformité des codes pays partenaires (ISO 3166-1 alpha-2)',
-    description: 'Assure que chaque pays d’origine correspond à une nomenclature d’État valide dans les tables douanières.',
+    description:
+      'Assure que chaque pays d’origine correspond à une nomenclature d’État valide dans les tables douanières.',
     status: !hasFlowRecords ? 'FAILED' : isoFailed === 0 ? 'PASSED' : 'WARNING',
     recordsTested: flows.length,
     passedCount: isoPassed,
@@ -109,7 +130,8 @@ export function runDataQualityChecks(
   checks.push({
     checkId: 'CHECK_TEMPORAL_SERIES_COMPLETENESS',
     name: 'Continuité temporelle des séries annuelles',
-    description: 'Vérifie la continuité entre les premières et dernières années présentes dans les données.',
+    description:
+      'Vérifie la continuité entre les premières et dernières années présentes dans les données.',
     status: hasAnnualData && missingYears.length === 0 ? 'PASSED' : 'FAILED',
     recordsTested: orderedYears.length,
     passedCount: Math.max(0, orderedYears.length - missingYears.length),
@@ -134,7 +156,8 @@ export function runDataQualityChecks(
   checks.push({
     checkId: 'CHECK_PROVENANCE_LINEAGE',
     name: 'Traçabilité et attribution de la source primaire',
-    description: 'Vérifie que chaque observation est reliée à un fichier vérifié et attribuée à la DGDDI.',
+    description:
+      'Vérifie que chaque observation est reliée à un fichier vérifié et attribuée à la DGDDI.',
     status: hasFlowRecords && filesVerified && sourceFailed === 0 ? 'PASSED' : 'FAILED',
     recordsTested: flows.length,
     passedCount: sourcePassed,
@@ -149,8 +172,8 @@ export function runDataQualityChecks(
   const overallStatus = checks.some((c) => c.status === 'FAILED')
     ? 'FAILED'
     : checks.some((c) => c.status === 'WARNING')
-    ? 'WARNING'
-    : 'PASSED';
+      ? 'WARNING'
+      : 'PASSED';
 
   const annualCount = flows.filter((f) => f.periodMonth === undefined).length;
   const monthlyCount = flows.filter((f) => f.periodMonth !== undefined).length;

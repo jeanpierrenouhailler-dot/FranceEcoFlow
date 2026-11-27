@@ -6,10 +6,15 @@ export class JodiConnector implements SourceConnector<EnergyObservation> {
   readonly name = 'Joint Organisations Data Initiative (JODI Oil World Database)';
   readonly provider = 'IEF / IEA / OPEC / Eurostat / OLADE / APEC / UNSD / GECF';
   readonly type = 'file';
-  readonly description = 'Source de référence envisagée : statistiques mondiales du pétrole JODI. Extraction live non implémentée.';
+  readonly description =
+    'Source de référence envisagée : statistiques mondiales du pétrole JODI. Extraction live non implémentée.';
   readonly officialUrl = 'https://www.jodidata.org';
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
   async parse(raw: any[]): Promise<EnergyObservation[]> {
     return raw.map((item, idx) => ({
@@ -43,7 +48,15 @@ export class JodiConnector implements SourceConnector<EnergyObservation> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<EnergyObservation>> {
     const start = Date.now();

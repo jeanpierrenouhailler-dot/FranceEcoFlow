@@ -6,7 +6,8 @@ export class OverpassConnector implements SourceConnector<Infrastructure> {
   readonly name = 'OpenStreetMap & Overpass API';
   readonly provider = 'OpenStreetMap Foundation & Contributors';
   readonly type = 'overpass';
-  readonly description = 'Source géographique de référence envisagée : infrastructures énergétiques OpenStreetMap. Extraction live non implémentée.';
+  readonly description =
+    'Source géographique de référence envisagée : infrastructures énergétiques OpenStreetMap. Extraction live non implémentée.';
   readonly officialUrl = 'https://overpass-api.de';
 
   // Geographic Bounding Box for Metropolitan France & Logistics Corridors
@@ -26,9 +27,17 @@ export class OverpassConnector implements SourceConnector<Infrastructure> {
     `.trim();
   }
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
-  async parse(_raw: any): Promise<Infrastructure[]> { throw new Error("Overpass response parsing is not implemented; no infrastructure is published."); }
+  async parse(_raw: any): Promise<Infrastructure[]> {
+    throw new Error(
+      'Overpass response parsing is not implemented; no infrastructure is published.',
+    );
+  }
 
   async normalize(records: Infrastructure[]): Promise<Infrastructure[]> {
     return records.sort((a, b) => (b.capacityAnnualTonnes ?? 0) - (a.capacityAnnualTonnes ?? 0));
@@ -44,7 +53,15 @@ export class OverpassConnector implements SourceConnector<Infrastructure> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<Infrastructure>> {
     const start = Date.now();

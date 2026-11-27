@@ -35,8 +35,9 @@ L’interface contient des vues d’exploration pour les flux commerciaux et én
 ### En développement local
 
 ```bash
-# 1. Cloner et installer les dépendances
-bun install --frozen-lockfile
+# 1. Cloner et installer les dépendances (npm est le gestionnaire de paquets
+#    officiel ; le verrouillage est assuré par package-lock.json)
+npm install
 
 # 2. Configurer les variables d'environnement et une base PostgreSQL/PostGIS
 cp .env.example .env
@@ -46,9 +47,9 @@ cp .env.example .env
 npm run dev
 
 # 4. Vérifications locales
-bun run test
-bun run lint
-bun run build
+npm test
+npm run lint
+npm run build
 ```
 
 Accéder à l'application dans votre navigateur : `http://localhost:3000`.
@@ -85,6 +86,15 @@ Les clés `COMTRADE_API_KEY` et `EIA_API_KEY` doivent être fournies par un gest
 
 ---
 
+## Qualité & intégration continue
+
+- **CI :** `.github/workflows/ci.yml` exécute lint, tests, build et un audit des dépendances de production sur chaque push et pull request.
+- **Lint :** `npm run lint` = `tsc --noEmit` + `oxlint`. ESLint n'est pas utilisé car `typescript-eslint` ne supporte pas TypeScript 7.
+- **Format :** Prettier (`npm run format`, `npm run format:check`).
+- **Hooks git :** Lefthook — `pre-commit` lance oxlint et Prettier sur les fichiers staged, `pre-push` lance le lint complet et les tests. Les hooks sont installés automatiquement par le script `prepare` lors de `npm install`.
+
+---
+
 ## 5. Documentation détaillée
 
 - [Architecture système & composants](docs/architecture.md)
@@ -93,6 +103,7 @@ Les clés `COMTRADE_API_KEY` et `EIA_API_KEY` doivent être fournies par un gest
 - [Spécification des APIs REST](docs/api.md)
 - [Méthodologie & Formules mathématiques](docs/methodology.md)
 - [Audit initial de préparation à la production](docs/audit-production-initial.md)
+- [Audit technique final de préparation à la production](docs/audit-production-final.md)
 - [Provenance et qualité des données](docs/data-provenance.md)
 - [Sécurité](docs/security.md)
 - [Migrations de base](docs/database-migrations.md)

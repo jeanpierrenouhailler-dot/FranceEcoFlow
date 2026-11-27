@@ -4,7 +4,7 @@ export type AdminTokenStatus = 'VALID' | 'INVALID' | 'NOT_CONFIGURED';
 
 export function validateAdminBearerToken(
   authorizationHeader: string | undefined,
-  expectedToken: string | undefined
+  expectedToken: string | undefined,
 ): AdminTokenStatus {
   if (!expectedToken) return 'NOT_CONFIGURED';
   if (!authorizationHeader?.startsWith('Bearer ')) return 'INVALID';

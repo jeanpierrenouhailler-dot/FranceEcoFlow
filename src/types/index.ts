@@ -84,7 +84,6 @@ export interface EconomicFlow {
   dauReference?: string; // Official DAU customs declaration reference
 }
 
-
 export interface TransportRoute {
   id: string;
   sourcePartnerId: string;
@@ -267,5 +266,3 @@ export interface EnergyObservation {
   sourceId: string;
   createdAt: string;
 }
-
-

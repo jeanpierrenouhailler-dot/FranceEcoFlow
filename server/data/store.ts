@@ -8,7 +8,6 @@ import {
   EconomicFlow,
   TransportRoute,
   Infrastructure,
-  ConfidenceLevel,
   FlowAnalysisSummary,
   SupplierSummary,
   AnomalyDetection,
@@ -16,7 +15,6 @@ import {
   TimeseriesPoint,
 } from '../../src/types/index.ts';
 import { getAuditReport, getIngestedFiles } from './ingestion/index.ts';
-
 
 // ============================================================
 // 1. SOURCES & DATASETS (Lineage & Provenance)
@@ -39,7 +37,8 @@ export const sources: Source[] = [
     url: 'https://www.statistiques.developpement-durable.gouv.fr',
     license: 'Non vérifiée',
     provenanceStatus: 'UNVERIFIED',
-    methodologyUrl: 'https://www.statistiques.developpement-durable.gouv.fr/publication-bilan-energetique',
+    methodologyUrl:
+      'https://www.statistiques.developpement-durable.gouv.fr/publication-bilan-energetique',
     notes: 'Référence de source potentielle ; connecteur et données non vérifiés.',
   },
   {
@@ -337,7 +336,8 @@ export const products: Product[] = [
     categoryId: 'energy_hydrocarbons',
     classificationIds: ['hs_2709', 'nc8_27090090', 'nc8_27090010'],
     unit: 't',
-    descriptionFr: 'Pétroles bruts issus des gisements d’extraction avant raffinage (NC8 27090090 & 27090010). Unité statistique de référence : tonne métrique nette.',
+    descriptionFr:
+      'Pétroles bruts issus des gisements d’extraction avant raffinage (NC8 27090090 & 27090010). Unité statistique de référence : tonne métrique nette.',
   },
   {
     id: 'refined_fuels',
@@ -347,7 +347,8 @@ export const products: Product[] = [
     categoryId: 'energy_hydrocarbons',
     classificationIds: ['hs_2710'],
     unit: 't',
-    descriptionFr: 'Carburants automobiles (gazole, essences), fiouls domestiques, kérosène pour aviation.',
+    descriptionFr:
+      'Carburants automobiles (gazole, essences), fiouls domestiques, kérosène pour aviation.',
   },
   {
     id: 'lng',
@@ -357,7 +358,8 @@ export const products: Product[] = [
     categoryId: 'energy_gas',
     classificationIds: [],
     unit: 't',
-    descriptionFr: 'Gaz naturel liquéfié à basse température acheminé par méthaniers aux terminaux méthaniers.',
+    descriptionFr:
+      'Gaz naturel liquéfié à basse température acheminé par méthaniers aux terminaux méthaniers.',
   },
 ];
 
@@ -380,7 +382,6 @@ export function getIngestionReport() {
 export function getRawSourceFiles() {
   return getIngestedFiles();
 }
-
 
 // ============================================================
 // 7. QUERY AND AGGREGATION SERVICE (Pure functions & analytical engine)
@@ -406,7 +407,11 @@ export function filterFlows(filter: FlowQueryFilter, flowRows: EconomicFlow[]): 
     if (flow.productId !== product) return false;
     if (filter.startYear !== undefined && flow.periodYear < filter.startYear) return false;
     if (filter.endYear !== undefined && flow.periodYear > filter.endYear) return false;
-    if (filter.partnerCountryId && filter.partnerCountryId !== 'all' && flow.partnerCountryId !== filter.partnerCountryId) {
+    if (
+      filter.partnerCountryId &&
+      filter.partnerCountryId !== 'all' &&
+      flow.partnerCountryId !== filter.partnerCountryId
+    ) {
       return false;
     }
     // If requesting annual summary, exclude monthly breakdown items to prevent double-counting
@@ -419,7 +424,7 @@ export function filterFlows(filter: FlowQueryFilter, flowRows: EconomicFlow[]): 
 
 export function calculateFlowSummary(
   filter: FlowQueryFilter,
-  flowRows: EconomicFlow[]
+  flowRows: EconomicFlow[],
 ): FlowAnalysisSummary {
   // Always use annual records for the aggregate summary
   const flows = filterFlows({ ...filter, periodType: 'annual' }, flowRows);
@@ -491,9 +496,11 @@ export function calculateFlowSummary(
 
   // YoY comparison: Calculate variation between the final year and previous year
   const availableYears = flows.map((flow) => flow.periodYear);
-  const endYear = filter.endYear ?? (availableYears.length ? Math.max(...availableYears) : undefined);
+  const endYear =
+    filter.endYear ?? (availableYears.length ? Math.max(...availableYears) : undefined);
   const endYearFlows = endYear === undefined ? [] : flows.filter((f) => f.periodYear === endYear);
-  const prevYearFlows = endYear === undefined ? [] : flows.filter((f) => f.periodYear === endYear - 1);
+  const prevYearFlows =
+    endYear === undefined ? [] : flows.filter((f) => f.periodYear === endYear - 1);
 
   const endYearQty = endYearFlows.reduce((sum, f) => sum + f.quantityTonnes, 0);
   const prevYearQty = prevYearFlows.reduce((sum, f) => sum + f.quantityTonnes, 0);
@@ -505,9 +512,12 @@ export function calculateFlowSummary(
   const endYearPrice = endYearQty > 0 ? endYearVal / endYearQty : 0;
   const prevYearPrice = prevYearQty > 0 ? prevYearVal / prevYearQty : 0;
   const yoyPriceChangePercent =
-    prevYearPrice > 0 ? Math.round(((endYearPrice - prevYearPrice) / prevYearPrice) * 1000) / 10 : 0;
+    prevYearPrice > 0
+      ? Math.round(((endYearPrice - prevYearPrice) / prevYearPrice) * 1000) / 10
+      : 0;
 
-  const startYear = filter.startYear ?? (availableYears.length ? Math.min(...availableYears) : undefined);
+  const startYear =
+    filter.startYear ?? (availableYears.length ? Math.min(...availableYears) : undefined);
   const periodLabel =
     startYear === undefined || endYear === undefined
       ? 'Période indisponible'
@@ -531,7 +541,7 @@ export function calculateFlowSummary(
 
 export function getSupplierRankings(
   filter: FlowQueryFilter,
-  flowRows: EconomicFlow[]
+  flowRows: EconomicFlow[],
 ): SupplierSummary[] {
   const flows = filterFlows({ ...filter, periodType: 'annual' }, flowRows);
   const totalQuantity = flows.reduce((sum, f) => sum + f.quantityTonnes, 0);
@@ -580,7 +590,7 @@ export function getSupplierRankings(
 
 export function getTimeseriesData(
   filter: FlowQueryFilter,
-  flowRows: EconomicFlow[]
+  flowRows: EconomicFlow[],
 ): TimeseriesPoint[] {
   const flows = filterFlows({ ...filter, periodType: 'annual' }, flowRows);
   const yearMap = new Map<number, { quantity: number; value: number }>();
@@ -602,18 +612,14 @@ export function getTimeseriesData(
       year: yr,
       quantityTonnes: d.quantity,
       valueEur: d.value,
-      implicitPriceEurPerTonne:
-        d.quantity > 0 ? Math.round((d.value / d.quantity) * 100) / 100 : 0,
+      implicitPriceEurPerTonne: d.quantity > 0 ? Math.round((d.value / d.quantity) * 100) / 100 : 0,
     });
   });
 
   return points;
 }
 
-export function getSankeyData(
-  filter: FlowQueryFilter,
-  flowRows: EconomicFlow[]
-): SankeyData {
+export function getSankeyData(filter: FlowQueryFilter, flowRows: EconomicFlow[]): SankeyData {
   const suppliers = getSupplierRankings(filter, flowRows);
   const product = products.find((p) => p.id === (filter.productId || 'crude_oil')) || products[0];
 
@@ -671,11 +677,16 @@ export function getSankeyData(
 
 export function detectAnomalies(
   productId: string = 'crude_oil',
-  flowRows: EconomicFlow[]
+  flowRows: EconomicFlow[],
 ): AnomalyDetection[] {
   const byPartnerAndYear = new Map<string, Map<number, number>>();
   for (const flow of flowRows) {
-    if (flow.productId !== productId || flow.flowType !== 'import' || flow.periodMonth !== undefined) continue;
+    if (
+      flow.productId !== productId ||
+      flow.flowType !== 'import' ||
+      flow.periodMonth !== undefined
+    )
+      continue;
     const years = byPartnerAndYear.get(flow.partnerCountryId) ?? new Map<number, number>();
     years.set(flow.periodYear, (years.get(flow.periodYear) ?? 0) + flow.quantityTonnes);
     byPartnerAndYear.set(flow.partnerCountryId, years);

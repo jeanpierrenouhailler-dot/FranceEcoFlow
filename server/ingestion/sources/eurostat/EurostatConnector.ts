@@ -6,10 +6,15 @@ export class EurostatConnector implements SourceConnector<EconomicFlow> {
   readonly name = 'Eurostat (Commission Européenne)';
   readonly provider = 'Eurostat — Directorate-General of the European Commission';
   readonly type = 'sdmx';
-  readonly description = 'Source de référence envisagée : statistiques européennes du commerce et de l’énergie. Extraction live non implémentée.';
+  readonly description =
+    'Source de référence envisagée : statistiques européennes du commerce et de l’énergie. Extraction live non implémentée.';
   readonly officialUrl = 'https://ec.europa.eu/eurostat';
 
-  async fetchRaw(): Promise<any> { throw new Error("Live source extraction is not implemented; synthetic observations are disabled."); }
+  async fetchRaw(): Promise<any> {
+    throw new Error(
+      'Live source extraction is not implemented; synthetic observations are disabled.',
+    );
+  }
 
   async parse(raw: any): Promise<EconomicFlow[]> {
     const flows: EconomicFlow[] = [];
@@ -52,7 +57,15 @@ export class EurostatConnector implements SourceConnector<EconomicFlow> {
     return { valid: errors.length === 0, errors };
   }
 
-  async healthCheck(): Promise<ConnectorHealth> { return { reachable: false, latencyMs: 0, message: "Live extraction is not implemented; source was not queried.", lastCheckedAt: new Date().toISOString(), status: "NOT_AVAILABLE" }; }
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      reachable: false,
+      latencyMs: 0,
+      message: 'Live extraction is not implemented; source was not queried.',
+      lastCheckedAt: new Date().toISOString(),
+      status: 'NOT_AVAILABLE',
+    };
+  }
 
   async run(): Promise<IngestionResult<EconomicFlow>> {
     const start = Date.now();
